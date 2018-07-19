@@ -86,8 +86,8 @@ Loop:
 }
 
 // consumeDeclaration attempts to consume a declaration, with optional attributes.
-func (p *sourceParser) consumeDeclaration() *ast.Interface {
-	decl := &ast.Interface{}
+func (p *sourceParser) consumeDeclaration() *ast.Declaration {
+	decl := &ast.Declaration{}
 	defer p.node(decl)()
 
 	// Consume any annotations.
