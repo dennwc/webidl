@@ -51,7 +51,7 @@
                     Optional:    false,
                     Variadic:    false,
                     Name:        "mutations",
-                    Init:        (*ast.Literal)(nil),
+                    Init:        nil,
                     Annotations: nil,
                 },
                 &ast.Parameter{
@@ -73,7 +73,7 @@
                     Optional:    false,
                     Variadic:    false,
                     Name:        "observer",
-                    Init:        (*ast.Literal)(nil),
+                    Init:        nil,
                     Annotations: nil,
                 },
             },

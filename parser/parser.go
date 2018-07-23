@@ -33,20 +33,38 @@ func (p *sourceParser) consumeIdentifier() string {
 	return ""
 }
 
-func (p *sourceParser) consumeLiteral() *ast.Literal {
-	n := &ast.Literal{}
-	defer p.node(n)()
-	if identifier, ok := p.tryConsumeIdentifier(); ok {
-		n.Value = identifier
+func (p *sourceParser) consumeLiteral() ast.Literal {
+	base := &ast.Base{}
+	finish := p.node(base)
+	l, ok := p.consume(tokenTypeIdentifier, tokenTypeString, tokenTypeNumber, tokenTypeLeftBracket)
+	if !ok {
+		p.emitError("Expected literal, found token %v", p.currentToken)
+		finish()
+		return &ast.BasicLiteral{Base: *base}
+	}
+	switch l.kind {
+	case tokenTypeIdentifier, tokenTypeString, tokenTypeNumber:
+		finish()
+		return &ast.BasicLiteral{Base: *base, Value: l.value}
+	case tokenTypeLeftBracket:
+		n := &ast.SequenceLiteral{}
+		for !p.isToken(tokenTypeRightBracket) {
+			if len(n.Elems) != 0 {
+				p.consume(tokenTypeComma)
+			}
+			if p.isToken(tokenTypeRightBracket) {
+				break
+			}
+			n.Elems = append(n.Elems, p.consumeLiteral())
+		}
+		// , (optional)
+		p.tryConsume(tokenTypeComma)
+		p.consume(tokenTypeRightBracket)
+		finish()
+		n.Base = *base
 		return n
 	}
-	l, ok := p.consume(tokenTypeString)
-	if !ok {
-		p.emitError("Expected identifier, found token %v", p.currentToken)
-	} else {
-		n.Value = l.value
-	}
-	return n
+	panic("unreachable")
 }
 
 // tryParserFn is a function that attempts to build an AST node.

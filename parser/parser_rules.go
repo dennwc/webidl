@@ -40,7 +40,8 @@ Loop:
 		switch {
 		case p.isToken(tokenTypeLeftBracket) || p.isIdentifier("interface") ||
 			p.isIdentifier("partial") || p.isIdentifier("callback") ||
-			p.isIdentifier("dictionary") || p.isIdentifier("enum"):
+			p.isIdentifier("dictionary") || p.isIdentifier("enum") ||
+			p.isIdentifier("typedef"):
 			n.Declarations = append(n.Declarations, p.consumeDeclaration())
 			continue
 		case p.isToken(tokenTypeIdentifier):
@@ -96,9 +97,10 @@ loop:
 			break
 		}
 
-		if p.isIdentifier("serializer") ||
+		if (p.isIdentifier("serializer") ||
 			p.isIdentifier("jsonifier") ||
-			p.isIdentifier("stringifier") {
+			p.isIdentifier("stringifier")) &&
+			p.isNextToken(tokenTypeSemicolon) {
 
 			op := &ast.CustomOp{}
 			finish := p.node(op)
@@ -118,7 +120,11 @@ loop:
 			iter := &ast.Iterable{}
 			finish := p.node(iter)
 			p.consume(tokenTypeLeftTri)
-			iter.Type = p.consumeType()
+			iter.Elem = p.consumeType()
+			if _, ok := p.tryConsume(tokenTypeComma); ok {
+				iter.Key = iter.Elem
+				iter.Elem = p.consumeType()
+			}
 			p.consume(tokenTypeRightTri)
 			finish()
 			n.Iterable = iter
@@ -187,7 +193,7 @@ loop:
 			iter := &ast.Iterable{}
 			finish := p.node(iter)
 			p.consume(tokenTypeLeftTri)
-			iter.Type = p.consumeType()
+			iter.Elem = p.consumeType()
 			p.consume(tokenTypeRightTri)
 			finish()
 			n.Iterable = iter
@@ -219,6 +225,7 @@ func (p *sourceParser) consumeDictionary(ann []*ast.Annotation, base *ast.Base, 
 		finish()
 		n.Base = *base
 	}()
+	n.Partial = p.tryConsumeKeyword("partial")
 	p.consumeKeyword("dictionary")
 
 	n.Name = p.consumeIdentifier()
@@ -243,6 +250,18 @@ func (p *sourceParser) consumeDictionary(ann []*ast.Annotation, base *ast.Base, 
 	return n
 }
 
+func (p *sourceParser) consumeTypedef(ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Typedef {
+	n := &ast.Typedef{Annotations: ann}
+	defer func() {
+		finish()
+		n.Base = *base
+	}()
+	p.consumeKeyword("typedef")
+	n.Type = p.consumeType()
+	n.Name = p.consumeIdentifier()
+	p.consume(tokenTypeSemicolon)
+	return n
+}
 func (p *sourceParser) consumeEnum(ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Enum {
 	n := &ast.Enum{Annotations: ann}
 	defer func() {
@@ -256,12 +275,18 @@ func (p *sourceParser) consumeEnum(ann []*ast.Annotation, base *ast.Base, finish
 	p.consume(tokenTypeLeftBrace)
 	for !p.isToken(tokenTypeRightBrace) {
 		if len(n.Values) != 0 {
+			// ,
 			if _, ok := p.tryConsume(tokenTypeComma); !ok {
 				break
 			}
 		}
+		if p.isToken(tokenTypeRightBrace) {
+			break
+		}
 		n.Values = append(n.Values, p.consumeLiteral())
 	}
+	// , (optional)
+	p.tryConsume(tokenTypeComma)
 	// };
 	p.consume(tokenTypeRightBrace)
 	p.consume(tokenTypeSemicolon)
@@ -276,6 +301,8 @@ func (p *sourceParser) consumeDeclaration() ast.Decl {
 	switch {
 	case p.isIdentifier("enum"):
 		return p.consumeEnum(ann, base, finish)
+	case p.isIdentifier("typedef"):
+		return p.consumeTypedef(ann, base, finish)
 	case p.isIdentifier("callback"):
 		_ = p.consumeIdentifier()
 		if p.tryConsumeKeyword("interface") {
@@ -288,24 +315,29 @@ func (p *sourceParser) consumeDeclaration() ast.Decl {
 		p.consume(tokenTypeSemicolon)
 		finish()
 		return &ast.Callback{Base: *base, Name: name, Return: ret, Parameters: par}
-	case p.isIdentifier("interface") || p.isIdentifier("partial"):
+	case p.isIdentifier("interface"):
 		return p.consumeInterfaceOrMixin(ann, base, finish)
 	case p.isIdentifier("dictionary"):
 		return p.consumeDictionary(ann, base, finish)
-	default:
-		p.emitError("Expected interface or dictionary, got: %v", p.currentToken)
-		// first, consume until '{'
-		for !p.isToken(tokenTypeLeftBrace, tokenTypeEOF) {
-			p.consumeToken()
+	case p.isIdentifier("partial"):
+		if p.isNextIdentifier("interface") {
+			return p.consumeInterfaceOrMixin(ann, base, finish)
+		} else if p.isNextIdentifier("dictionary") {
+			return p.consumeDictionary(ann, base, finish)
 		}
-		// then consume until '}'
-		for !p.isToken(tokenTypeRightBrace, tokenTypeEOF) {
-			p.consumeToken()
-		}
-		p.consume(tokenTypeSemicolon)
-		finish()
-		return &ast.Interface{Base: *base}
 	}
+	p.emitError("Expected interface or dictionary, got: %v", p.currentToken)
+	// first, consume until '{'
+	for !p.isToken(tokenTypeLeftBrace, tokenTypeEOF) {
+		p.consumeToken()
+	}
+	// then consume until '}'
+	for !p.isToken(tokenTypeRightBrace, tokenTypeEOF) {
+		p.consumeToken()
+	}
+	p.consume(tokenTypeSemicolon)
+	finish()
+	return &ast.Interface{Base: *base}
 }
 
 func (p *sourceParser) consumeInterfaceMember() ast.InterfaceMember {
@@ -443,27 +475,44 @@ func (p *sourceParser) tryConsumeIdentifiersList() ([]string, bool) {
 // expandedTypeKeywords defines the keywords that form the prefixes for expanded types:
 // two-identifier type names.
 var expandedTypeKeywords = map[string][]string{
-	"unsigned":     {"short", "long"},
-	"long":         {"long"},
-	"unrestricted": {"float", "double"},
+	"unsigned":      {"short", "long"},
+	"long":          {"long"},
+	"unsigned long": {"long"},
+	"unrestricted":  {"float", "double"},
 }
 
-func (p *sourceParser) consumeType() ast.Type {
+func (p *sourceParser) consumeType() (otyp ast.Type) {
 	base := &ast.Base{}
 	finish := p.node(base)
-	if p.tryConsumeKeyword("any") {
+	defer func() {
 		finish()
-		return &ast.AnyType{Base: *base}
+		if otyp == nil {
+			return
+		}
+		*otyp.NodeBase() = *base
+		if _, ok := p.tryConsume(tokenTypeQuestionMark); ok {
+			nl := &ast.NullableType{Base: *base, Type: otyp}
+			nl.End++
+			otyp = nl
+		}
+	}()
+	if p.tryConsumeKeyword("any") {
+		return &ast.AnyType{}
 	} else if p.tryConsumeKeyword("sequence") {
 		seq := &ast.SequenceType{}
 		p.consume(tokenTypeLeftTri)
 		seq.Elem = p.consumeType()
 		p.consume(tokenTypeRightTri)
-		finish()
-		seq.Base = *base
 		return seq
-	}
-	if _, ok := p.tryConsume(tokenTypeLeftParen); ok {
+	} else if p.tryConsumeKeyword("record") {
+		rec := &ast.RecordType{}
+		p.consume(tokenTypeLeftTri)
+		rec.Key = p.consumeType()
+		p.consume(tokenTypeComma)
+		rec.Elem = p.consumeType()
+		p.consume(tokenTypeRightTri)
+		return rec
+	} else if _, ok := p.tryConsume(tokenTypeLeftParen); ok {
 		// "("
 		var types []ast.Type
 		for {
@@ -474,32 +523,44 @@ func (p *sourceParser) consumeType() ast.Type {
 		}
 		// ")"
 		p.consume(tokenTypeRightParen)
-		finish()
-		return &ast.UnionType{Base: *base, Types: types}
+		return &ast.UnionType{Types: types}
 	}
 
-	identifier := p.consumeIdentifier()
-	typeName := identifier
-
-	// If the identifier is the beginning of a possible expanded type name, check for the
-	// secondary portion.
-	if secondaries, ok := expandedTypeKeywords[identifier]; ok {
+	typeName := p.consumeIdentifier()
+loop:
+	for {
+		// If the identifier is the beginning of a possible expanded type name, check for the
+		// secondary portion.
+		secondaries, ok := expandedTypeKeywords[typeName]
+		if !ok {
+			break
+		}
 		for _, secondary := range secondaries {
 			if p.isToken(tokenTypeIdentifier) && p.currentToken.value == secondary {
 				typeName += " " + secondary
 				p.consume(tokenTypeIdentifier)
-				break
+				continue loop
 			}
 		}
+		break
 	}
-	finish()
-	tp := &ast.TypeName{Base: *base, Name: typeName}
-	if _, ok := p.tryConsume(tokenTypeQuestionMark); ok {
-		nl := &ast.NullableType{Base: tp.Base, Type: tp}
-		nl.End++
-		return nl
+	if _, ok := p.tryConsume(tokenTypeLeftTri); ok {
+		pr := &ast.ParametrizedType{Name: typeName}
+		for !p.isToken(tokenTypeRightTri) {
+			if len(pr.Elems) != 0 {
+				p.consume(tokenTypeComma)
+			}
+			if p.isToken(tokenTypeRightTri) {
+				break
+			}
+			pr.Elems = append(pr.Elems, p.consumeType())
+		}
+		// , (optional)
+		p.tryConsume(tokenTypeComma)
+		p.consume(tokenTypeRightTri)
+		return pr
 	}
-	return tp
+	return &ast.TypeName{Name: typeName}
 }
 
 // consumeParameter attempts to consume a parameter.
@@ -527,7 +588,7 @@ func (p *sourceParser) consumeParameter() *ast.Parameter {
 	return n
 }
 
-func (p *sourceParser) tryConsumeDefaultValue() *ast.Literal {
+func (p *sourceParser) tryConsumeDefaultValue() ast.Literal {
 	if _, ok := p.tryConsume(tokenTypeEquals); ok {
 		return p.consumeLiteral()
 	}

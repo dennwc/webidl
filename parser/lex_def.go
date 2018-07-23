@@ -109,12 +109,16 @@ Loop:
 			l.backup()
 			return lexStringLiteral
 
+		case isNumber(r):
+			l.backup()
+			return lexNumber
+
 		case isAlphaNumeric(r):
 			l.backup()
 			return lexIdentifierOrKeyword
 
 		case r == '/':
-			return lexSinglelineComment
+			return lexComment
 
 		default:
 			return l.errorf("unrecognized character at this location: %#U", r)
@@ -125,15 +129,25 @@ Loop:
 	return nil
 }
 
-// lexSinglelineComment scans until newline or EOFRUNE
-func lexSinglelineComment(l *lexer) stateFn {
-	checker := func(r rune) (bool, error) {
-		result := r == EOFRUNE || isNewline(r)
-		return !result, nil
+func lexComment(l *lexer) stateFn {
+	switch l.peek() {
+	case '/':
+		l.accept("/")
+		return buildLexUntil(tokenTypeComment, func(r rune) (bool, error) {
+			result := r == EOFRUNE || isNewline(r)
+			return !result, nil
+		})
+	case '*':
+		l.accept("*")
+		for {
+			if l.acceptString("*/") {
+				break
+			}
+			l.next()
+		}
+		l.emit(tokenTypeComment)
 	}
-
-	l.acceptString("//")
-	return buildLexUntil(tokenTypeComment, checker)
+	return lexSource
 }
 
 // lexIdentifierOrKeyword searches for a keyword or literal identifier.

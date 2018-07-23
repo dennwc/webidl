@@ -16,4 +16,5 @@ interface CharacterData : Node {
   void insertData(unsigned long offset, DOMString data);
   void deleteData(unsigned long offset, unsigned long count);
   void replaceData(unsigned long offset, unsigned long count, DOMString data);
+  void postMessage(any message, optional sequence<object> transfer = []);
 };

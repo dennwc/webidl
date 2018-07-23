@@ -72,6 +72,7 @@ type Dictionary struct {
 	Base
 	Name        string
 	Inherits    string
+	Partial     bool
 	Annotations []*Annotation
 	Members     []*Member
 }
@@ -94,7 +95,7 @@ type Parameter struct {
 	Optional    bool
 	Variadic    bool
 	Name        string
-	Init        *Literal
+	Init        Literal
 	Annotations []*Annotation
 }
 
@@ -121,7 +122,7 @@ type Member struct {
 	Base
 	Name           string
 	Type           Type
-	Init           *Literal
+	Init           Literal
 	Attribute      bool
 	Static         bool
 	Const          bool
@@ -149,7 +150,8 @@ func (*TypeName) isType() {}
 
 type Iterable struct {
 	Base
-	Type Type
+	Key  Type
+	Elem Type
 }
 
 type Callback struct {
@@ -165,10 +167,19 @@ type Enum struct {
 	Base
 	Annotations []*Annotation
 	Name        string
-	Values      []*Literal
+	Values      []Literal
 }
 
 func (*Enum) isDecl() {}
+
+type Typedef struct {
+	Base
+	Annotations []*Annotation
+	Name        string
+	Type        Type
+}
+
+func (*Typedef) isDecl() {}
 
 type Type interface {
 	Node
@@ -188,6 +199,22 @@ type SequenceType struct {
 
 func (*SequenceType) isType() {}
 
+type RecordType struct {
+	Base
+	Key  Type
+	Elem Type
+}
+
+func (*RecordType) isType() {}
+
+type ParametrizedType struct {
+	Base
+	Name  string
+	Elems []Type
+}
+
+func (*ParametrizedType) isType() {}
+
 type UnionType struct {
 	Base
 	Types []Type
@@ -202,8 +229,20 @@ type NullableType struct {
 
 func (*NullableType) isType() {}
 
-type Literal struct {
-	Base
+type Literal interface {
+	isLiteral()
+}
 
+type BasicLiteral struct {
+	Base
 	Value string
 }
+
+func (*BasicLiteral) isLiteral() {}
+
+type SequenceLiteral struct {
+	Base
+	Elems []Literal
+}
+
+func (*SequenceLiteral) isLiteral() {}

@@ -225,15 +225,7 @@ func lexNumber(l *lexer) stateFn {
 	if !l.scanNumber() {
 		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 	}
-	if sign := l.peek(); sign == '+' || sign == '-' {
-		// Complex: 1+2i. No spaces, must end in 'i'.
-		if !l.scanNumber() || l.input[l.pos-1] != 'i' {
-			return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
-		}
-		l.emit(tokenTypeNumber)
-	} else {
-		l.emit(tokenTypeNumber)
-	}
+	l.emit(tokenTypeNumber)
 	return lexSource
 }
 
@@ -253,8 +245,6 @@ func (l *lexer) scanNumber() bool {
 		l.accept("+-")
 		l.acceptRun("0123456789")
 	}
-	// Is it imaginary?
-	l.accept("i")
 	// Next thing mustn't be alphanumeric.
 	if isAlphaNumeric(l.peek()) {
 		l.next()
@@ -271,6 +261,10 @@ func isSpace(r rune) bool {
 // isNewline reports whether r is a newline character.
 func isNewline(r rune) bool {
 	return r == '\r' || r == '\n'
+}
+
+func isNumber(r rune) bool {
+	return r == '+' || r == '-' || unicode.IsDigit(r)
 }
 
 // isAlphaNumeric reports whether r is an alphabetic, digit, or underscore.

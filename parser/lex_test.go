@@ -31,9 +31,15 @@ var lexerTests = []lexerTest{
 
 	{"newline r", "\r", []lexeme{{tokenTypeWhitespace, 0, "\r"}, tEOF}},
 	{"newline n", "\n", []lexeme{{tokenTypeWhitespace, 0, "\n"}, tEOF}},
-	{"newline rn", "\r\n", []lexeme{{tokenTypeWhitespace, 0, "\r"}, lexeme{tokenTypeWhitespace, 0, "\n"}, tEOF}},
+	{"newline rn", "\r\n", []lexeme{{tokenTypeWhitespace, 0, "\r"}, {tokenTypeWhitespace, 0, "\n"}, tEOF}},
 
 	{"comment", "// a comment", []lexeme{{tokenTypeComment, 0, "// a comment"}, tEOF}},
+	{"multiline comment", "/* a comment */foo", []lexeme{
+		{tokenTypeComment, 0, "/* a comment */"}, {tokenTypeIdentifier, 0, "foo"}, tEOF,
+	}},
+	{"multiline comment 2", "/* a\ncomment */foo", []lexeme{
+		{tokenTypeComment, 0, "/* a\ncomment */"}, {tokenTypeIdentifier, 0, "foo"}, tEOF,
+	}},
 
 	{"left brace", "{", []lexeme{{tokenTypeLeftBrace, 0, "{"}, tEOF}},
 	{"right brace", "}", []lexeme{{tokenTypeRightBrace, 0, "}"}, tEOF}},
@@ -53,6 +59,7 @@ var lexerTests = []lexerTest{
 	{"string", `"val"`, []lexeme{{tokenTypeString, 0, `"val"`}, tEOF}},
 	{"string esc", `"va\"l"`, []lexeme{{tokenTypeString, 0, `"va\"l"`}, tEOF}},
 	{"string noesc", `"val\\"`, []lexeme{{tokenTypeString, 0, `"val\\"`}, tEOF}},
+	{"number", `0.0`, []lexeme{{tokenTypeNumber, 0, `0.0`}, tEOF}},
 }
 
 func TestLexer(t *testing.T) {
