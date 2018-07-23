@@ -29,8 +29,24 @@ func (p *sourceParser) consumeIdentifier() string {
 		return identifier
 	}
 
-	p.emitError("Expected identifier, found token %v", p.currentToken.kind)
+	p.emitError("Expected identifier, found token %v", p.currentToken)
 	return ""
+}
+
+func (p *sourceParser) consumeLiteral() *ast.Literal {
+	n := &ast.Literal{}
+	defer p.node(n)()
+	if identifier, ok := p.tryConsumeIdentifier(); ok {
+		n.Value = identifier
+		return n
+	}
+	l, ok := p.consume(tokenTypeString)
+	if !ok {
+		p.emitError("Expected identifier, found token %v", p.currentToken)
+	} else {
+		n.Value = l.value
+	}
+	return n
 }
 
 // tryParserFn is a function that attempts to build an AST node.
@@ -60,31 +76,16 @@ type sourceParser struct {
 	config        parserConfig    // Configuration for customizing the parser
 }
 
-type tokenTypeChecker func(kind tokenType) bool
-
 // parserConfig holds configuration for customizing the parser
 type parserConfig struct {
-	ignoredTokenTypes map[tokenType]bool // the token types ignored by the parser
-
-	isCommentToken tokenTypeChecker // Returns whether the specified tokenType is a comment token.
-
-	keywordTokenType tokenType // The keyword token type.
-	errorTokenType   tokenType // The error token type.
-	eofTokenType     tokenType // The EOF token type.
-}
-
-// lookaheadTracker holds state when conducting a multi-token lookahead in the parser.
-type lookaheadTracker struct {
-	parser       *sourceParser // the parent parser
-	counter      int           // the number of tokens we have looked-ahead.
-	currentToken lexeme        // the current lookahead token
+	ignoredTokenTypes map[tokenType]struct{} // the token types ignored by the parser
 }
 
 // buildParser returns a new sourceParser instance.
 func buildParser(lexer *lexer, config parserConfig, startIndex bytePosition) *sourceParser {
-	l := peekable_lex(lexer)
+	l := peekableLex(lexer)
 	newLexeme := func() commentedLexeme {
-		return commentedLexeme{lexeme: lexeme{config.eofTokenType, 0, ""}}
+		return commentedLexeme{lexeme: lexeme{tokenTypeEOF, 0, ""}}
 	}
 	return &sourceParser{
 		startIndex:    startIndex,
@@ -152,7 +153,7 @@ func (p *sourceParser) consumeToken() commentedLexeme {
 	for {
 		token := p.lex.nextToken()
 
-		if p.config.isCommentToken(token.kind) {
+		if token.kind == tokenTypeComment {
 			comments = append(comments, token.value)
 		}
 
@@ -178,15 +179,13 @@ func (p *sourceParser) isToken(types ...tokenType) bool {
 // nextToken returns the next token found, without advancing the parser. Used for
 // lookahead.
 func (p *sourceParser) nextToken() lexeme {
-	var counter int
-	for {
-		token := p.lex.peekToken(counter + 1)
-		counter = counter + 1
-
+	for i := 0; i < 1000; i++ {
+		token := p.lex.peekToken(i + 1)
 		if _, ok := p.config.ignoredTokenTypes[token.kind]; !ok {
 			return token
 		}
 	}
+	panic("stale")
 }
 
 // isNextToken returns true if the *next* token matches one of the types given.
@@ -202,15 +201,14 @@ func (p *sourceParser) isNextToken(types ...tokenType) bool {
 	return false
 }
 
-// isKeyword returns true if the current token is a keyword matching that given.
-func (p *sourceParser) isKeyword(keyword string) bool {
-	return p.isToken(p.config.keywordTokenType) && p.currentToken.value == keyword
+func (p *sourceParser) isIdentifier(name string) bool {
+	return p.isToken(tokenTypeIdentifier) && p.currentToken.value == name
 }
 
-// isNextKeyword returns true if the next token is a keyword matching that given.
-func (p *sourceParser) isNextKeyword(keyword string) bool {
+// isNextIdentifier returns true if the next token is a keyword matching that given.
+func (p *sourceParser) isNextIdentifier(keyword string) bool {
 	token := p.nextToken()
-	return token.kind == p.config.keywordTokenType && token.value == keyword
+	return token.kind == tokenTypeIdentifier && token.value == keyword
 }
 
 // emitError creates a new error node and attachs it as a child of the current
@@ -224,7 +222,7 @@ func (p *sourceParser) emitError(format string, args ...interface{}) {
 // consumeKeyword consumes an expected keyword token or adds an error node.
 func (p *sourceParser) consumeKeyword(keyword string) bool {
 	if !p.tryConsumeKeyword(keyword) {
-		p.emitError("Expected keyword %s, found token %v", keyword, p.currentToken.kind)
+		p.emitError("Expected keyword %s, found token %v", keyword, p.currentToken)
 		return false
 	}
 	return true
@@ -232,7 +230,7 @@ func (p *sourceParser) consumeKeyword(keyword string) bool {
 
 // tryConsumeKeyword attempts to consume an expected keyword token.
 func (p *sourceParser) tryConsumeKeyword(keyword string) bool {
-	if !p.isKeyword(keyword) {
+	if !p.isIdentifier(keyword) {
 		return false
 	}
 
@@ -245,7 +243,7 @@ func (p *sourceParser) tryConsumeKeyword(keyword string) bool {
 func (p *sourceParser) consume(types ...tokenType) (lexeme, bool) {
 	token, ok := p.tryConsume(types...)
 	if !ok {
-		p.emitError("Expected one of: %v, found: %v", types, p.currentToken.kind)
+		p.emitError("Expected one of: %v, found: %v", types, p.currentToken)
 	}
 	return token, ok
 }
@@ -266,7 +264,7 @@ func (p *sourceParser) tryConsumeWithComments(types ...tokenType) (commentedLexe
 		return token, true
 	}
 
-	return commentedLexeme{lexeme{p.config.errorTokenType, -1, ""}, make([]string, 0)}, false
+	return commentedLexeme{lexeme{tokenTypeError, -1, ""}, make([]string, 0)}, false
 }
 
 // consumeUntil consumes all tokens until one of the given token types is found.
@@ -340,7 +338,7 @@ func (p *sourceParser) performLeftRecursiveParsing(subTryExprFn tryParserFn, rig
 		// Consume the right hand expression and build an expression node (if applicable).
 		exprNode, ok := rightNodeBuilder(currentLeftNode, operatorToken.lexeme)
 		if !ok {
-			p.emitError("Expected right hand expression, found: %v", p.currentToken.kind)
+			p.emitError("Expected right hand expression, found: %v", p.currentToken)
 			return currentLeftNode, true
 		}
 
@@ -352,42 +350,4 @@ func (p *sourceParser) performLeftRecursiveParsing(subTryExprFn tryParserFn, rig
 	}
 
 	return currentLeftNode, true
-}
-
-// newLookaheadTracker returns a new lookahead tracker, which helps with multiple lookahead
-// in the parser.
-func (p *sourceParser) newLookaheadTracker() *lookaheadTracker {
-	return &lookaheadTracker{
-		parser:       p,
-		counter:      0,
-		currentToken: p.currentToken.lexeme,
-	}
-}
-
-// nextToken returns the next token in the lookahead.
-func (t *lookaheadTracker) nextToken() lexeme {
-	for {
-		token := t.parser.lex.peekToken(t.counter + 1)
-		t.counter = t.counter + 1
-		t.currentToken = token
-
-		if _, ok := t.parser.config.ignoredTokenTypes[token.kind]; !ok {
-			return token
-		}
-	}
-}
-
-// matchToken returns whether the current lookahead token is one of the given types and moves
-// the lookahead forward if a match is found.
-func (t *lookaheadTracker) matchToken(types ...tokenType) (lexeme, bool) {
-	token := t.currentToken
-
-	for _, kind := range types {
-		if token.kind == kind {
-			t.nextToken()
-			return token, true
-		}
-	}
-
-	return token, false
 }

@@ -6,17 +6,17 @@
         Errors:   nil,
     },
     Declarations: {
-        &ast.Declaration{
+        &ast.Interface{
             Base: ast.Base{
                 Start:    0,
                 End:      49,
                 Comments: nil,
                 Errors:   nil,
             },
-            Kind:        "interface",
+            Partial:     false,
+            Callback:    false,
             Name:        "SomeInterface",
-            ParentType:  "AnotherInterface",
-            Mixin:       false,
+            Inherits:    "AnotherInterface",
             Annotations: nil,
             Members:     nil,
             CustomOps:   nil,

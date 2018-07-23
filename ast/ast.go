@@ -5,10 +5,10 @@ type Node interface {
 }
 
 type Base struct {
-	Start    int          `json:"start"` // rune
-	End      int          `json:"end"`   // rune
-	Comments []string     `json:"comments,omitempty"`
-	Errors   []*ErrorNode `json:"errors,omitempty"`
+	Start    int // rune
+	End      int // rune
+	Comments []string
+	Errors   []*ErrorNode
 }
 
 func (b *Base) NodeBase() *Base {
@@ -18,99 +18,126 @@ func (b *Base) NodeBase() *Base {
 // error occurred; value is text of error
 type ErrorNode struct {
 	Base
-	Message string `json:"message"`
+	Message string
 }
 
 type Decl interface {
 	Node
-	isGenDecl()
+	isDecl()
 }
 
 // The file root node
 type File struct {
 	Base
-	Declarations []Decl `json:"declarations,omitempty"`
+	Declarations []Decl
 }
 
 // interface Foo { ... }
-type Declaration struct {
+type Interface struct {
 	Base
-	Kind        string        `json:"kind"`
-	Name        string        `json:"name"`
-	ParentType  string        `json:"parent_type,omitempty"`
-	Mixin       bool          `json:"mixin,omitempty"`
-	Annotations []*Annotation `json:"annotations,omitempty"`
-	Members     []*Member     `json:"members,omitempty"`
-	CustomOps   []*CustomOp   `json:"custom_ops,omitempty"`
-	Iterable    *Iterable     `json:"iterable,omitempty"`
+	Partial     bool
+	Callback    bool
+	Name        string
+	Inherits    string
+	Annotations []*Annotation
+	Members     []InterfaceMember
+	CustomOps   []*CustomOp
+	Iterable    *Iterable
 }
 
-func (Declaration) isGenDecl() {}
+func (*Interface) isDecl() {}
+
+type InterfaceMember interface {
+	isInterfaceMember()
+}
+
+// interface mixin Foo { ... }
+type Mixin struct {
+	Base
+	Name        string
+	Inherits    string
+	Annotations []*Annotation
+	Members     []MixinMember
+	CustomOps   []*CustomOp
+	Iterable    *Iterable
+}
+
+func (*Mixin) isDecl() {}
+
+type MixinMember interface {
+	isMixinMember()
+}
 
 type Dictionary struct {
 	Base
-	Name        string        `json:"name"`
-	Annotations []*Annotation `json:"annotations,omitempty"`
-	Members     []*Member     `json:"members,omitempty"`
+	Name        string
+	Inherits    string
+	Annotations []*Annotation
+	Members     []*Member
 }
 
-func (Dictionary) isGenDecl() {}
+func (*Dictionary) isDecl() {}
 
 // [Constructor], []
 type Annotation struct {
 	Base
-	Name       string       `json:"name"`
-	Value      string       `json:"value,omitempty"`      // [A=B]
-	Parameters []*Parameter `json:"parameters,omitempty"` // [A(X x, Y y)]
-	Values     []string     `json:"values,omitempty"`     // [A=(a,b,c)]
+	Name       string
+	Value      string       // [A=B]
+	Parameters []*Parameter // [A(X x, Y y)]
+	Values     []string     // [A=(a,b,c)]
 }
 
 // optional any SomeArg
 type Parameter struct {
 	Base
-	Type     Type   `json:"type"`
-	Optional bool   `json:"optional,omitempty"`
-	Variadic bool   `json:"variadic,omitempty"`
-	Name     string `json:"name"`
-	Init     string `json:"init,omitempty"`
+	Type        Type
+	Optional    bool
+	Variadic    bool
+	Name        string
+	Init        *Literal
+	Annotations []*Annotation
 }
 
 // Window implements ECMA262Globals
 type Implementation struct {
 	Base
-	Name   string `json:"name"`
-	Source string `json:"source"`
+	Name   string
+	Source string
 }
 
-func (Implementation) isGenDecl() {}
+func (*Implementation) isDecl() {}
 
 // Document includes DocumentOrShadowRoot
 type Includes struct {
 	Base
-	Name   string `json:"name"`
-	Source string `json:"source"`
+	Name   string
+	Source string
 }
 
-func (Includes) isGenDecl() {}
+func (*Includes) isDecl() {}
 
 // readonly attribute something
 type Member struct {
 	Base
-	Name           string        `json:"name,omitempty"`
-	Type           Type          `json:"type,omitempty"`
-	Init           string        `json:"init,omitempty"`
-	Attribute      bool          `json:"attribute,omitempty"`
-	Static         bool          `json:"static,omitempty"`
-	Const          bool          `json:"const,omitempty"`
-	Readonly       bool          `json:"readonly,omitempty"`
-	Specialization string        `json:"specialization,omitempty"`
-	Parameters     []*Parameter  `json:"parameters,omitempty"`
-	Annotations    []*Annotation `json:"annotations,omitempty"`
+	Name           string
+	Type           Type
+	Init           *Literal
+	Attribute      bool
+	Static         bool
+	Const          bool
+	Readonly       bool
+	Required       bool
+	Specialization string
+	Parameters     []*Parameter
+	Annotations    []*Annotation
 }
+
+func (*Member) isInterfaceMember() {}
+func (*Member) isMixinMember()     {}
 
 type CustomOp struct {
 	Base
-	Name string `json:"name"`
+	Name string
 }
 
 type TypeName struct {
@@ -122,17 +149,26 @@ func (*TypeName) isType() {}
 
 type Iterable struct {
 	Base
-	Type Type `json:"type"`
+	Type Type
 }
 
 type Callback struct {
 	Base
-	Name       string       `json:"name"`
-	Return     Type         `json:"type,omitempty"`
-	Parameters []*Parameter `json:"parameters,omitempty"`
+	Name       string
+	Return     Type
+	Parameters []*Parameter
 }
 
-func (Callback) isGenDecl() {}
+func (*Callback) isDecl() {}
+
+type Enum struct {
+	Base
+	Annotations []*Annotation
+	Name        string
+	Values      []*Literal
+}
+
+func (*Enum) isDecl() {}
 
 type Type interface {
 	Node
@@ -165,3 +201,9 @@ type NullableType struct {
 }
 
 func (*NullableType) isType() {}
+
+type Literal struct {
+	Base
+
+	Value string
+}

@@ -26,30 +26,33 @@ var lexerTests = []lexerTest{
 	{"empty", "", []lexeme{tEOF}},
 
 	{"single whitespace", " ", []lexeme{tWhitespace, tEOF}},
-	{"single tab", "\t", []lexeme{lexeme{tokenTypeWhitespace, 0, "\t"}, tEOF}},
+	{"single tab", "\t", []lexeme{{tokenTypeWhitespace, 0, "\t"}, tEOF}},
 	{"multiple whitespace", "   ", []lexeme{tWhitespace, tWhitespace, tWhitespace, tEOF}},
 
-	{"newline r", "\r", []lexeme{lexeme{tokenTypeWhitespace, 0, "\r"}, tEOF}},
-	{"newline n", "\n", []lexeme{lexeme{tokenTypeWhitespace, 0, "\n"}, tEOF}},
-	{"newline rn", "\r\n", []lexeme{lexeme{tokenTypeWhitespace, 0, "\r"}, lexeme{tokenTypeWhitespace, 0, "\n"}, tEOF}},
+	{"newline r", "\r", []lexeme{{tokenTypeWhitespace, 0, "\r"}, tEOF}},
+	{"newline n", "\n", []lexeme{{tokenTypeWhitespace, 0, "\n"}, tEOF}},
+	{"newline rn", "\r\n", []lexeme{{tokenTypeWhitespace, 0, "\r"}, lexeme{tokenTypeWhitespace, 0, "\n"}, tEOF}},
 
-	{"comment", "// a comment", []lexeme{lexeme{tokenTypeComment, 0, "// a comment"}, tEOF}},
+	{"comment", "// a comment", []lexeme{{tokenTypeComment, 0, "// a comment"}, tEOF}},
 
-	{"left brace", "{", []lexeme{lexeme{tokenTypeLeftBrace, 0, "{"}, tEOF}},
-	{"right brace", "}", []lexeme{lexeme{tokenTypeRightBrace, 0, "}"}, tEOF}},
+	{"left brace", "{", []lexeme{{tokenTypeLeftBrace, 0, "{"}, tEOF}},
+	{"right brace", "}", []lexeme{{tokenTypeRightBrace, 0, "}"}, tEOF}},
 
-	{"left bracket", "[", []lexeme{lexeme{tokenTypeLeftBracket, 0, "["}, tEOF}},
-	{"right bracket", "]", []lexeme{lexeme{tokenTypeRightBracket, 0, "]"}, tEOF}},
+	{"left bracket", "[", []lexeme{{tokenTypeLeftBracket, 0, "["}, tEOF}},
+	{"right bracket", "]", []lexeme{{tokenTypeRightBracket, 0, "]"}, tEOF}},
 
-	{"left paren", "(", []lexeme{lexeme{tokenTypeLeftParen, 0, "("}, tEOF}},
-	{"right paren", ")", []lexeme{lexeme{tokenTypeRightParen, 0, ")"}, tEOF}},
+	{"left paren", "(", []lexeme{{tokenTypeLeftParen, 0, "("}, tEOF}},
+	{"right paren", ")", []lexeme{{tokenTypeRightParen, 0, ")"}, tEOF}},
 
-	{"semicolon", ";", []lexeme{lexeme{tokenTypeSemicolon, 0, ";"}, tEOF}},
-	{"comma", ",", []lexeme{lexeme{tokenTypeComma, 0, ","}, tEOF}},
-	{"variadic", "...", []lexeme{lexeme{tokenTypeVariadic, 0, "..."}, tEOF}},
+	{"semicolon", ";", []lexeme{{tokenTypeSemicolon, 0, ";"}, tEOF}},
+	{"comma", ",", []lexeme{{tokenTypeComma, 0, ","}, tEOF}},
+	{"variadic", "...", []lexeme{{tokenTypeVariadic, 0, "..."}, tEOF}},
 
-	{"keyword", "interface", []lexeme{lexeme{tokenTypeKeyword, 0, "interface"}, tEOF}},
-	{"identifier", "interace", []lexeme{lexeme{tokenTypeIdentifier, 0, "interace"}, tEOF}},
+	{"keyword", "interface", []lexeme{{tokenTypeIdentifier, 0, "interface"}, tEOF}},
+	{"identifier", "interace", []lexeme{{tokenTypeIdentifier, 0, "interace"}, tEOF}},
+	{"string", `"val"`, []lexeme{{tokenTypeString, 0, `"val"`}, tEOF}},
+	{"string esc", `"va\"l"`, []lexeme{{tokenTypeString, 0, `"va\"l"`}, tEOF}},
+	{"string noesc", `"val\\"`, []lexeme{{tokenTypeString, 0, `"val\\"`}, tEOF}},
 }
 
 func TestLexer(t *testing.T) {

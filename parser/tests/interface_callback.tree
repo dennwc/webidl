@@ -1,7 +1,7 @@
 &ast.File{
     Base: ast.Base{
         Start:    0,
-        End:      110,
+        End:      69,
         Comments: nil,
         Errors:   nil,
     },
@@ -9,59 +9,32 @@
         &ast.Interface{
             Base: ast.Base{
                 Start:    0,
-                End:      110,
+                End:      69,
                 Comments: nil,
                 Errors:   nil,
             },
             Partial:     false,
-            Callback:    false,
-            Name:        "SomeInterface",
+            Callback:    true,
+            Name:        "EventListener",
             Inherits:    "",
             Annotations: nil,
             Members:     {
                 &ast.Member{
                     Base: ast.Base{
-                        Start:    27,
-                        End:      62,
+                        Start:    37,
+                        End:      65,
                         Comments: nil,
                         Errors:   nil,
                     },
-                    Name: "NaN",
+                    Name: "handleEvent",
                     Type: &ast.TypeName{
                         Base: ast.Base{
-                            Start:    46,
-                            End:      58,
+                            Start:    37,
+                            End:      40,
                             Comments: nil,
                             Errors:   nil,
                         },
-                        Name: "unsigned long",
-                    },
-                    Init:           (*ast.Literal)(nil),
-                    Attribute:      true,
-                    Static:         false,
-                    Const:          false,
-                    Readonly:       true,
-                    Required:       false,
-                    Specialization: "",
-                    Parameters:     nil,
-                    Annotations:    nil,
-                },
-                &ast.Member{
-                    Base: ast.Base{
-                        Start:    66,
-                        End:      106,
-                        Comments: nil,
-                        Errors:   nil,
-                    },
-                    Name: "create",
-                    Type: &ast.TypeName{
-                        Base: ast.Base{
-                            Start:    66,
-                            End:      84,
-                            Comments: nil,
-                            Errors:   nil,
-                        },
-                        Name: "unrestricted double",
+                        Name: "void",
                     },
                     Init:           (*ast.Literal)(nil),
                     Attribute:      false,
@@ -73,23 +46,23 @@
                     Parameters:     {
                         &ast.Parameter{
                             Base: ast.Base{
-                                Start:    93,
-                                End:      105,
+                                Start:    54,
+                                End:      64,
                                 Comments: nil,
                                 Errors:   nil,
                             },
                             Type: &ast.TypeName{
                                 Base: ast.Base{
-                                    Start:    93,
-                                    End:      101,
+                                    Start:    54,
+                                    End:      58,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
-                                Name: "long long",
+                                Name: "Event",
                             },
                             Optional:    false,
                             Variadic:    false,
-                            Name:        "foo",
+                            Name:        "event",
                             Init:        (*ast.Literal)(nil),
                             Annotations: nil,
                         },

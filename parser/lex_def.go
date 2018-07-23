@@ -5,14 +5,13 @@
 // Based on design first introduced in: http://blog.golang.org/two-go-talks-lexical-scanning-in-go-and
 // Portions copied and modified from: https://github.com/golang/go/blob/master/src/text/template/parse/lex.go
 
-//go:generate stringer -type=tokenType
-//go:generate gengen github.com/serulian/compiler/genericparser tokenType NodeType
+//go:generate stringer -type=tokenType -trimprefix=tokenType
 
 package parser
 
 // lex creates a new scanner for the input string.
 func lex(input string) *lexer {
-	return buildlex(input, performLexSource, isWhitespaceToken, tokenTypeError, tokenTypeNumber)
+	return buildlex(input, performLexSource, isWhitespaceToken)
 }
 
 // tokenType identifies the type of lexer lexemes.
@@ -24,8 +23,8 @@ const (
 	tokenTypeWhitespace
 	tokenTypeComment
 
-	tokenTypeKeyword    // interface
-	tokenTypeIdentifier // helloworld
+	tokenTypeIdentifier // helloworld, interface
+	tokenTypeString     // "hello"
 	tokenTypeNumber     // 123
 
 	tokenTypeLeftBrace    // {
@@ -44,28 +43,6 @@ const (
 	tokenTypeColon        // :
 	tokenTypeVariadic     // ...
 )
-
-// keywords contains the full set of keywords supported.
-var keywords = map[string]bool{
-	"interface":  true,
-	"static":     true,
-	"readonly":   true,
-	"attribute":  true,
-	"any":        true,
-	"optional":   true,
-	"implements": true,
-	"getter":     true,
-	"setter":     true,
-	"serializer": true,
-	"jsonifier":  true,
-	"sequence":   true,
-	"const":      true,
-	"dictionary": true,
-	"or":         true,
-	"mixin":      true,
-	"includes":   true,
-	"iterable":   true,
-}
 
 func isWhitespaceToken(kind tokenType) bool {
 	return kind == tokenTypeWhitespace
@@ -128,6 +105,10 @@ Loop:
 		case isSpace(r) || isNewline(r):
 			l.emit(tokenTypeWhitespace)
 
+		case r == '"':
+			l.backup()
+			return lexStringLiteral
+
 		case isAlphaNumeric(r):
 			l.backup()
 			return lexIdentifierOrKeyword
@@ -164,16 +145,22 @@ func lexIdentifierOrKeyword(l *lexer) stateFn {
 
 		l.next()
 	}
+	l.emit(tokenTypeIdentifier)
+	return lexSource
+}
 
-	_, is_keyword := keywords[l.value()]
-
-	switch {
-	case is_keyword:
-		l.emit(tokenTypeKeyword)
-
-	default:
-		l.emit(tokenTypeIdentifier)
+func lexStringLiteral(l *lexer) stateFn {
+	l.accept(`"`)
+	esc := false
+	for {
+		c := l.peek()
+		if c == '"' && !esc {
+			l.next()
+			break
+		}
+		esc = c == '\\' && !esc
+		l.next()
 	}
-
+	l.emit(tokenTypeString)
 	return lexSource
 }

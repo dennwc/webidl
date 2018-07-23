@@ -1,22 +1,52 @@
 &ast.File{
     Base: ast.Base{
         Start:    0,
-        End:      24,
+        End:      84,
         Comments: nil,
         Errors:   nil,
     },
     Declarations: {
-        &ast.Declaration{
+        &ast.Interface{
             Base: ast.Base{
                 Start:    0,
                 End:      24,
                 Comments: nil,
                 Errors:   nil,
             },
-            Kind:        "interface",
+            Partial:     false,
+            Callback:    false,
             Name:        "MyInterface",
-            ParentType:  "",
-            Mixin:       false,
+            Inherits:    "",
+            Annotations: nil,
+            Members:     nil,
+            CustomOps:   nil,
+            Iterable:    (*ast.Iterable)(nil),
+        },
+        &ast.Mixin{
+            Base: ast.Base{
+                Start:    26,
+                End:      52,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Name:        "MyMixin",
+            Inherits:    "",
+            Annotations: nil,
+            Members:     nil,
+            CustomOps:   nil,
+            Iterable:    (*ast.Iterable)(nil),
+        },
+        &ast.Interface{
+            Base: ast.Base{
+                Start:    54,
+                End:      84,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Partial:     true,
+            Callback:    false,
+            Name:        "MyPartial",
+            Inherits:    "",
             Annotations: nil,
             Members:     nil,
             CustomOps:   nil,

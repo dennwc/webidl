@@ -6,7 +6,7 @@
         Errors:   nil,
     },
     Declarations: {
-        &ast.Declaration{
+        &ast.Interface{
             Base: ast.Base{
                 Start:    0,
                 End:      51,
@@ -19,7 +19,7 @@
                             Comments: nil,
                             Errors:   nil,
                         },
-                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeRightBrace",
+                        Message: "Expected one of: [Semicolon], found: inp:51 - RightBrace(})",
                     },
                     &ast.ErrorNode{
                         Base: ast.Base{
@@ -28,7 +28,7 @@
                             Comments: nil,
                             Errors:   nil,
                         },
-                        Message: "Expected semicolon, got: tokenTypeRightBrace",
+                        Message: "Expected semicolon, got: inp:51 - RightBrace(})",
                     },
                     &ast.ErrorNode{
                         Base: ast.Base{
@@ -37,14 +37,14 @@
                             Comments: nil,
                             Errors:   nil,
                         },
-                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeKeyword",
+                        Message: "Expected one of: [Semicolon], found: inp:54 - Keyword(interface)",
                     },
                 },
             },
-            Kind:        "interface",
+            Partial:     false,
+            Callback:    false,
             Name:        "foo",
-            ParentType:  "",
-            Mixin:       false,
+            Inherits:    "",
             Annotations: nil,
             Members:     {
                 &ast.Member{
@@ -64,11 +64,12 @@
                         },
                         Name: "someType",
                     },
-                    Init:           "",
+                    Init:           (*ast.Literal)(nil),
                     Attribute:      false,
                     Static:         true,
                     Const:          false,
                     Readonly:       false,
+                    Required:       false,
                     Specialization: "",
                     Parameters:     {
                         &ast.Parameter{
@@ -87,10 +88,11 @@
                                 },
                                 Name: "string",
                             },
-                            Optional: false,
-                            Variadic: false,
-                            Name:     "param",
-                            Init:     "",
+                            Optional:    false,
+                            Variadic:    false,
+                            Name:        "param",
+                            Init:        (*ast.Literal)(nil),
+                            Annotations: nil,
                         },
                     },
                     Annotations: nil,
@@ -99,7 +101,7 @@
             CustomOps: nil,
             Iterable:  (*ast.Iterable)(nil),
         },
-        &ast.Declaration{
+        &ast.Interface{
             Base: ast.Base{
                 Start:    54,
                 End:      91,
@@ -112,7 +114,7 @@
                             Comments: nil,
                             Errors:   nil,
                         },
-                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeRightBrace",
+                        Message: "Expected one of: [Semicolon], found: inp:91 - RightBrace(})",
                     },
                     &ast.ErrorNode{
                         Base: ast.Base{
@@ -121,7 +123,7 @@
                             Comments: nil,
                             Errors:   nil,
                         },
-                        Message: "Expected semicolon, got: tokenTypeRightBrace",
+                        Message: "Expected semicolon, got: inp:91 - RightBrace(})",
                     },
                     &ast.ErrorNode{
                         Base: ast.Base{
@@ -130,14 +132,14 @@
                             Comments: nil,
                             Errors:   nil,
                         },
-                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeEOF",
+                        Message: "Expected one of: [Semicolon], found: inp:94 - EOF()",
                     },
                 },
             },
-            Kind:        "interface",
+            Partial:     false,
+            Callback:    false,
             Name:        "someType",
-            ParentType:  "",
-            Mixin:       false,
+            Inherits:    "",
             Annotations: nil,
             Members:     {
                 &ast.Member{
@@ -157,11 +159,12 @@
                         },
                         Name: "bool",
                     },
-                    Init:           "",
+                    Init:           (*ast.Literal)(nil),
                     Attribute:      false,
                     Static:         false,
                     Const:          false,
                     Readonly:       false,
+                    Required:       false,
                     Specialization: "",
                     Parameters:     nil,
                     Annotations:    nil,

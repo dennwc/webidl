@@ -16,8 +16,8 @@ type peekableLexer struct {
 	readTokens *list.List // tokens already read from the lexer during a lookahead.
 }
 
-// peekable_lex returns a new peekableLexer for the given lexer.
-func peekable_lex(lex *lexer) *peekableLexer {
+// peekableLex returns a new peekableLexer for the given lexer.
+func peekableLex(lex *lexer) *peekableLexer {
 	return &peekableLexer{
 		lex:        lex,
 		readTokens: list.New(),
@@ -37,23 +37,16 @@ func (l *peekableLexer) nextToken() lexeme {
 // peekToken performs lookahead of the given count on the token stream.
 func (l *peekableLexer) peekToken(count int) lexeme {
 	if count < 1 {
-		panic(fmt.Sprintf("Expected count > 1, received: %v", count))
+		panic(fmt.Sprintf("Expected count >= 1, received: %v", count))
 	}
 
 	// Ensure that the readTokens has at least the requested number of tokens.
-	if l.readTokens.Len() < count {
-		for {
-			l.readTokens.PushBack(l.lex.nextToken())
-
-			if l.readTokens.Len() == count {
-				break
-			}
-		}
+	for l.readTokens.Len() < count {
+		l.readTokens.PushBack(l.lex.nextToken())
 	}
 
 	// Retrieve the count-th token from the list.
-	var element *list.Element
-	element = l.readTokens.Front()
+	element := l.readTokens.Front()
 
 	for i := 1; i < count; i++ {
 		element = element.Next()

@@ -12,18 +12,10 @@ func Parse(input string) *ast.File {
 	lexer := lex(input)
 
 	config := parserConfig{
-		ignoredTokenTypes: map[tokenType]bool{
-			tokenTypeWhitespace: true,
-			tokenTypeComment:    true,
+		ignoredTokenTypes: map[tokenType]struct{}{
+			tokenTypeWhitespace: {},
+			tokenTypeComment:    {},
 		},
-
-		isCommentToken: func(kind tokenType) bool {
-			return kind == tokenTypeComment
-		},
-
-		keywordTokenType: tokenTypeKeyword,
-		errorTokenType:   tokenTypeError,
-		eofTokenType:     tokenTypeEOF,
 	}
 
 	parser := buildParser(lexer, config, bytePosition(0))
@@ -46,19 +38,14 @@ func (p *sourceParser) consumeTopLevel() *ast.File {
 Loop:
 	for !p.isToken(tokenTypeEOF) {
 		switch {
-
-		case p.isToken(tokenTypeLeftBracket) || p.isKeyword("interface") || p.isKeyword("dictionary"):
+		case p.isToken(tokenTypeLeftBracket) || p.isIdentifier("interface") ||
+			p.isIdentifier("partial") || p.isIdentifier("callback") ||
+			p.isIdentifier("dictionary") || p.isIdentifier("enum"):
 			n.Declarations = append(n.Declarations, p.consumeDeclaration())
-
+			continue
 		case p.isToken(tokenTypeIdentifier):
 			name := p.consumeIdentifier()
-			if name == "callback" { // cannot be a keyword, because it's a common name for identifiers
-				cb := p.consumeCallbackType()
-				cb.Name = name
-				n.Declarations = append(n.Declarations, cb)
-				p.consume(tokenTypeSemicolon)
-				continue
-			} else if p.tryConsumeKeyword("implements") {
+			if p.tryConsumeKeyword("implements") {
 				impl := &ast.Implementation{Name: name}
 				impl.Source = p.consumeIdentifier()
 				n.Declarations = append(n.Declarations, impl)
@@ -71,83 +58,70 @@ Loop:
 				p.consume(tokenTypeSemicolon)
 				continue
 			}
-			p.emitError("Unexpected token at root level: %v", p.currentToken.kind)
-			break Loop
-
-		default:
-			p.emitError("Unexpected token at root level: %v", p.currentToken.kind)
-			break Loop
 		}
+		p.emitError("Unexpected token at root level: %v", p.currentToken)
+		break Loop
 	}
 
 	return n
 }
 
-// consumeDeclaration attempts to consume a declaration, with optional attributes.
-func (p *sourceParser) consumeDeclaration() *ast.Declaration {
-	decl := &ast.Declaration{}
-	defer p.node(decl)()
-
-	// Consume any annotations.
-	decl.Annotations = p.tryConsumeAnnotations()
-
-	// Consume the type of declaration.
-	if p.tryConsumeKeyword("interface") {
-		decl.Kind = "interface"
-		if p.tryConsumeKeyword("mixin") {
-			decl.Mixin = true
-		}
-	} else if p.tryConsumeKeyword("dictionary") {
-		decl.Kind = "dictionary"
-	} else {
-		p.consumeKeyword("interface")
-		return decl
+func (p *sourceParser) consumeInterfaceOrMixin(ann []*ast.Annotation, base *ast.Base, finish func()) ast.Decl {
+	partial := p.tryConsumeKeyword("partial")
+	p.consumeKeyword("interface")
+	if p.tryConsumeKeyword("mixin") {
+		return p.consumeMixin(ann, base, finish)
 	}
+	return p.consumeInterface(partial, false, ann, base, finish)
+}
+func (p *sourceParser) consumeInterface(partial, callback bool, ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Interface {
+	n := &ast.Interface{Annotations: ann, Partial: partial, Callback: callback}
+	defer func() {
+		finish()
+		n.Base = *base
+	}()
 
-	// Consume the name of the declaration.
-	decl.Name = p.consumeIdentifier()
+	n.Name = p.consumeIdentifier()
 
-	// Check for (optional) inheritance.
 	if _, ok := p.tryConsume(tokenTypeColon); ok {
-		decl.ParentType = p.consumeIdentifier()
+		n.Inherits = p.consumeIdentifier()
 	}
 
 	// {
 	p.consume(tokenTypeLeftBrace)
 
-	// Members and custom operations (if any).
-	isDict := decl.Kind == "dictionary"
 loop:
 	for {
 		if p.isToken(tokenTypeRightBrace) {
 			break
 		}
 
-		if p.isKeyword("serializer") || p.isKeyword("jsonifier") {
-			customOpNode := &ast.CustomOp{}
-			finish := p.node(customOpNode)
-			customOpNode.Name = p.currentToken.value
+		if p.isIdentifier("serializer") ||
+			p.isIdentifier("jsonifier") ||
+			p.isIdentifier("stringifier") {
 
-			p.consume(tokenTypeKeyword)
+			op := &ast.CustomOp{}
+			finish := p.node(op)
+			op.Name = p.consumeIdentifier()
 			_, ok := p.consume(tokenTypeSemicolon)
 			finish()
 
-			decl.CustomOps = append(decl.CustomOps, customOpNode)
+			n.CustomOps = append(n.CustomOps, op)
 
 			if !ok {
 				break loop
 			}
 
 			continue
-		} else if p.isKeyword("iterable") {
-			p.consume(tokenTypeKeyword)
+		} else if p.isIdentifier("iterable") {
+			p.consume(tokenTypeIdentifier)
 			iter := &ast.Iterable{}
 			finish := p.node(iter)
 			p.consume(tokenTypeLeftTri)
 			iter.Type = p.consumeType()
 			p.consume(tokenTypeRightTri)
 			finish()
-			decl.Iterable = iter
+			n.Iterable = iter
 			_, ok := p.consume(tokenTypeSemicolon)
 			if !ok {
 				break loop
@@ -155,10 +129,10 @@ loop:
 
 			continue
 		}
-		decl.Members = append(decl.Members, p.consumeMember(isDict))
+		n.Members = append(n.Members, p.consumeInterfaceMember())
 
 		if _, ok := p.consume(tokenTypeSemicolon); !ok {
-			p.emitError("Expected semicolon, got: %v", p.currentToken.kind)
+			p.emitError("Expected semicolon, got: %v", p.currentToken)
 			break
 		}
 	}
@@ -166,7 +140,180 @@ loop:
 	// };
 	p.consume(tokenTypeRightBrace)
 	p.consume(tokenTypeSemicolon)
-	return decl
+
+	return n
+}
+
+func (p *sourceParser) consumeMixin(ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Mixin {
+	n := &ast.Mixin{Annotations: ann}
+	defer func() {
+		finish()
+		n.Base = *base
+	}()
+
+	n.Name = p.consumeIdentifier()
+
+	if _, ok := p.tryConsume(tokenTypeColon); ok {
+		n.Inherits = p.consumeIdentifier()
+	}
+
+	// {
+	p.consume(tokenTypeLeftBrace)
+
+loop:
+	for {
+		if p.isToken(tokenTypeRightBrace) {
+			break
+		}
+
+		if p.isIdentifier("serializer") || p.isIdentifier("jsonifier") {
+			customOpNode := &ast.CustomOp{}
+			finish := p.node(customOpNode)
+			customOpNode.Name = p.currentToken.value
+
+			p.consume(tokenTypeIdentifier)
+			_, ok := p.consume(tokenTypeSemicolon)
+			finish()
+
+			n.CustomOps = append(n.CustomOps, customOpNode)
+
+			if !ok {
+				break loop
+			}
+
+			continue
+		} else if p.isIdentifier("iterable") {
+			p.consume(tokenTypeIdentifier)
+			iter := &ast.Iterable{}
+			finish := p.node(iter)
+			p.consume(tokenTypeLeftTri)
+			iter.Type = p.consumeType()
+			p.consume(tokenTypeRightTri)
+			finish()
+			n.Iterable = iter
+			_, ok := p.consume(tokenTypeSemicolon)
+			if !ok {
+				break loop
+			}
+
+			continue
+		}
+		n.Members = append(n.Members, p.consumeMixinMember())
+
+		if _, ok := p.consume(tokenTypeSemicolon); !ok {
+			p.emitError("Expected semicolon, got: %v", p.currentToken)
+			break
+		}
+	}
+
+	// };
+	p.consume(tokenTypeRightBrace)
+	p.consume(tokenTypeSemicolon)
+
+	return n
+}
+
+func (p *sourceParser) consumeDictionary(ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Dictionary {
+	n := &ast.Dictionary{Annotations: ann}
+	defer func() {
+		finish()
+		n.Base = *base
+	}()
+	p.consumeKeyword("dictionary")
+
+	n.Name = p.consumeIdentifier()
+	if _, ok := p.tryConsume(tokenTypeColon); ok {
+		n.Inherits = p.consumeIdentifier()
+	}
+
+	// {
+	p.consume(tokenTypeLeftBrace)
+	for !p.isToken(tokenTypeRightBrace) {
+		n.Members = append(n.Members, p.consumeMember(true))
+
+		if _, ok := p.consume(tokenTypeSemicolon); !ok {
+			p.emitError("Expected semicolon, got: %v", p.currentToken)
+			break
+		}
+	}
+
+	// };
+	p.consume(tokenTypeRightBrace)
+	p.consume(tokenTypeSemicolon)
+	return n
+}
+
+func (p *sourceParser) consumeEnum(ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Enum {
+	n := &ast.Enum{Annotations: ann}
+	defer func() {
+		finish()
+		n.Base = *base
+	}()
+	p.consumeKeyword("enum")
+	n.Name = p.consumeIdentifier()
+
+	// {
+	p.consume(tokenTypeLeftBrace)
+	for !p.isToken(tokenTypeRightBrace) {
+		if len(n.Values) != 0 {
+			if _, ok := p.tryConsume(tokenTypeComma); !ok {
+				break
+			}
+		}
+		n.Values = append(n.Values, p.consumeLiteral())
+	}
+	// };
+	p.consume(tokenTypeRightBrace)
+	p.consume(tokenTypeSemicolon)
+	return n
+}
+
+// consumeDeclaration attempts to consume a declaration, with optional attributes.
+func (p *sourceParser) consumeDeclaration() ast.Decl {
+	base := &ast.Base{}
+	finish := p.node(base)
+	ann := p.tryConsumeAnnotations()
+	switch {
+	case p.isIdentifier("enum"):
+		return p.consumeEnum(ann, base, finish)
+	case p.isIdentifier("callback"):
+		_ = p.consumeIdentifier()
+		if p.tryConsumeKeyword("interface") {
+			return p.consumeInterface(false, true, ann, base, finish)
+		}
+		name := p.consumeIdentifier()
+		p.consume(tokenTypeEquals)
+		ret := p.consumeType()
+		par := p.consumeParameters()
+		p.consume(tokenTypeSemicolon)
+		finish()
+		return &ast.Callback{Base: *base, Name: name, Return: ret, Parameters: par}
+	case p.isIdentifier("interface") || p.isIdentifier("partial"):
+		return p.consumeInterfaceOrMixin(ann, base, finish)
+	case p.isIdentifier("dictionary"):
+		return p.consumeDictionary(ann, base, finish)
+	default:
+		p.emitError("Expected interface or dictionary, got: %v", p.currentToken)
+		// first, consume until '{'
+		for !p.isToken(tokenTypeLeftBrace, tokenTypeEOF) {
+			p.consumeToken()
+		}
+		// then consume until '}'
+		for !p.isToken(tokenTypeRightBrace, tokenTypeEOF) {
+			p.consumeToken()
+		}
+		p.consume(tokenTypeSemicolon)
+		finish()
+		return &ast.Interface{Base: *base}
+	}
+}
+
+func (p *sourceParser) consumeInterfaceMember() ast.InterfaceMember {
+	return p.consumeMember(false)
+}
+
+func (p *sourceParser) consumeMixinMember() ast.MixinMember {
+	return p.consumeMember(false)
 }
 
 // consumeMember attempts to consume a member definition in a declaration.
@@ -174,21 +321,20 @@ func (p *sourceParser) consumeMember(dict bool) *ast.Member {
 	n := &ast.Member{}
 	defer p.node(n)()
 
-	// annotations
 	n.Annotations = p.tryConsumeAnnotations()
 	n.Attribute = dict
 
 	// getter/setter
-	if p.isKeyword("getter") || p.isKeyword("setter") {
-		consumed, _ := p.consume(tokenTypeKeyword)
-		n.Specialization = consumed.value
+	if p.isIdentifier("getter") || p.isIdentifier("setter") {
+		n.Specialization = p.consumeIdentifier()
+	} else if p.tryConsumeKeyword("stringifier") {
+		n.Specialization = "stringifier"
 	}
 
 	if p.tryConsumeKeyword("const") {
 		n.Const = true
 	}
 
-	// static readonly attribute
 	if p.tryConsumeKeyword("static") {
 		n.Static = true
 	}
@@ -197,8 +343,16 @@ func (p *sourceParser) consumeMember(dict bool) *ast.Member {
 		n.Readonly = true
 	}
 
+	if p.tryConsumeKeyword("required") {
+		n.Required = true
+	}
+
 	if p.tryConsumeKeyword("attribute") {
 		n.Attribute = true
+	}
+
+	if len(n.Annotations) == 0 {
+		n.Annotations = p.tryConsumeAnnotations()
 	}
 
 	// Consume the type of the member.
@@ -286,14 +440,6 @@ func (p *sourceParser) tryConsumeIdentifiersList() ([]string, bool) {
 	return list, true
 }
 
-func (p *sourceParser) consumeCallbackType() *ast.Callback {
-	cb := &ast.Callback{}
-	defer p.node(cb)()
-	cb.Return = p.consumeType()
-	cb.Parameters = p.consumeParameters()
-	return cb
-}
-
 // expandedTypeKeywords defines the keywords that form the prefixes for expanded types:
 // two-identifier type names.
 var expandedTypeKeywords = map[string][]string{
@@ -360,6 +506,7 @@ func (p *sourceParser) consumeType() ast.Type {
 func (p *sourceParser) consumeParameter() *ast.Parameter {
 	n := &ast.Parameter{}
 	defer p.node(n)()
+	n.Annotations = p.tryConsumeAnnotations()
 
 	// optional
 	if p.tryConsumeKeyword("optional") {
@@ -380,11 +527,11 @@ func (p *sourceParser) consumeParameter() *ast.Parameter {
 	return n
 }
 
-func (p *sourceParser) tryConsumeDefaultValue() string {
+func (p *sourceParser) tryConsumeDefaultValue() *ast.Literal {
 	if _, ok := p.tryConsume(tokenTypeEquals); ok {
-		return p.consumeIdentifier()
+		return p.consumeLiteral()
 	}
-	return ""
+	return nil
 }
 
 func (p *sourceParser) consumeDefaultValue() string {

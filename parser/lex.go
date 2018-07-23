@@ -23,15 +23,12 @@ type isWhitespaceTokenChecker func(kind tokenType) bool
 type lexSourceImpl func(l *lexer) stateFn
 
 // buildlex creates a new scanner for the input string.
-func buildlex(input string, impl lexSourceImpl, whitespace isWhitespaceTokenChecker, errorTokenType tokenType, numericTokenType tokenType) *lexer {
+func buildlex(input string, impl lexSourceImpl, whitespace isWhitespaceTokenChecker) *lexer {
 	l := &lexer{
 		input:             input,
 		tokens:            make(chan lexeme),
 		isWhitespaceToken: whitespace,
 		lexSource:         impl,
-
-		errorTokenType:   errorTokenType,
-		numericTokenType: numericTokenType,
 	}
 	go l.run()
 	return l
@@ -55,6 +52,10 @@ type lexeme struct {
 	value    string       // The textual value of this token.
 }
 
+func (l lexeme) String() string {
+	return fmt.Sprintf("inp:%d - %v(%s)", l.position, l.kind, l.value)
+}
+
 // stateFn represents the state of the scanner as a function that returns the next state.
 type stateFn func(*lexer) stateFn
 
@@ -72,9 +73,6 @@ type lexer struct {
 
 	isWhitespaceToken isWhitespaceTokenChecker
 	lexSource         lexSourceImpl
-
-	errorTokenType   tokenType
-	numericTokenType tokenType
 }
 
 // nextToken returns the next token from the input.
@@ -134,7 +132,11 @@ func (l *lexer) value() string {
 
 // emit passes an token back to the client.
 func (l *lexer) emit(t tokenType) {
-	currentToken := lexeme{t, l.start, l.value()}
+	l.emitWith(t, l.value())
+}
+
+func (l *lexer) emitWith(t tokenType, val string) {
+	currentToken := lexeme{t, l.start, val}
 
 	if l.isWhitespaceToken(t) {
 		l.lastNonWhitespaceToken = currentToken
@@ -148,7 +150,7 @@ func (l *lexer) emit(t tokenType) {
 // errorf returns an error token and terminates the scan by passing
 // back a nil pointer that will be the next state, terminating l.nexttoken.
 func (l *lexer) errorf(format string, args ...interface{}) stateFn {
-	l.tokens <- lexeme{l.errorTokenType, l.start, fmt.Sprintf(format, args...)}
+	l.tokens <- lexeme{tokenTypeError, l.start, fmt.Sprintf(format, args...)}
 	return nil
 }
 
@@ -228,9 +230,9 @@ func lexNumber(l *lexer) stateFn {
 		if !l.scanNumber() || l.input[l.pos-1] != 'i' {
 			return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 		}
-		l.emit(l.numericTokenType)
+		l.emit(tokenTypeNumber)
 	} else {
-		l.emit(l.numericTokenType)
+		l.emit(tokenTypeNumber)
 	}
 	return lexSource
 }
