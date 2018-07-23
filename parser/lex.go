@@ -23,9 +23,8 @@ type isWhitespaceTokenChecker func(kind tokenType) bool
 type lexSourceImpl func(l *lexer) stateFn
 
 // buildlex creates a new scanner for the input string.
-func buildlex(source InputSource, input string, impl lexSourceImpl, whitespace isWhitespaceTokenChecker, errorTokenType tokenType, numericTokenType tokenType) *lexer {
+func buildlex(input string, impl lexSourceImpl, whitespace isWhitespaceTokenChecker, errorTokenType tokenType, numericTokenType tokenType) *lexer {
 	l := &lexer{
-		source:            source,
 		input:             input,
 		tokens:            make(chan lexeme),
 		isWhitespaceToken: whitespace,
@@ -61,7 +60,6 @@ type stateFn func(*lexer) stateFn
 
 // lexer holds the state of the scanner.
 type lexer struct {
-	source                 InputSource  // the name of the input; used only for error reports
 	input                  string       // the string being scanned
 	state                  stateFn      // the next lexing function to enter
 	pos                    bytePosition // current position in the input

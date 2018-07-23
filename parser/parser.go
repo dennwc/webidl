@@ -12,8 +12,6 @@ import (
 	"github.com/dennwc/webidl/ast"
 )
 
-type InputSource string
-
 // tryConsumeIdentifier attempts to consume an expected identifier.
 func (p *sourceParser) tryConsumeIdentifier() (string, bool) {
 	if !p.isToken(tokenTypeIdentifier) {
@@ -56,7 +54,7 @@ type commentedLexeme struct {
 type sourceParser struct {
 	startIndex    bytePosition    // The start index for position decoration on nodes.
 	lex           *peekableLexer  // a reference to the lexer used for tokenization
-	nodes         *nodeStack      // the stack of the current nodes
+	nodes         nodeStack       // the stack of the current nodes
 	currentToken  commentedLexeme // the current token
 	previousToken commentedLexeme // the previous token
 	config        parserConfig    // Configuration for customizing the parser
@@ -83,14 +81,16 @@ type lookaheadTracker struct {
 }
 
 // buildParser returns a new sourceParser instance.
-func buildParser(lexer *lexer, config parserConfig, startIndex bytePosition, input string) *sourceParser {
+func buildParser(lexer *lexer, config parserConfig, startIndex bytePosition) *sourceParser {
 	l := peekable_lex(lexer)
+	newLexeme := func() commentedLexeme {
+		return commentedLexeme{lexeme: lexeme{config.eofTokenType, 0, ""}}
+	}
 	return &sourceParser{
 		startIndex:    startIndex,
 		lex:           l,
-		nodes:         &nodeStack{},
-		currentToken:  commentedLexeme{lexeme{config.eofTokenType, 0, ""}, make([]string, 0)},
-		previousToken: commentedLexeme{lexeme{config.eofTokenType, 0, ""}, make([]string, 0)},
+		currentToken:  newLexeme(),
+		previousToken: newLexeme(),
 		config:        config,
 	}
 }
@@ -98,7 +98,8 @@ func buildParser(lexer *lexer, config parserConfig, startIndex bytePosition, inp
 // createErrorNode creates a new error node and returns it.
 func (p *sourceParser) createErrorNode(format string, args ...interface{}) *ast.ErrorNode {
 	n := &ast.ErrorNode{Message: fmt.Sprintf(format, args...)}
-	p.node(n)()
+	p.decorateStartRuneAndComments(n, p.currentToken)
+	p.decorateEndRune(n, p.previousToken)
 	return n
 }
 
@@ -122,21 +123,21 @@ func (p *sourceParser) node(node ast.Node) func() {
 // decorateStartRuneAndComments decorates the given node with the location of the given token as its
 // starting rune, as well as any comments attached to the token.
 func (p *sourceParser) decorateStartRuneAndComments(node ast.Node, token commentedLexeme) {
-	b := node.Base()
+	b := node.NodeBase()
 	b.Start = int(token.position) + int(p.startIndex)
 	p.decorateComments(node, token.comments)
 }
 
 // decorateComments decorates the given node with the specified comments.
 func (p *sourceParser) decorateComments(node ast.Node, comments []string) {
-	b := node.Base()
+	b := node.NodeBase()
 	b.Comments = append(b.Comments, comments...)
 }
 
 // decorateEndRune decorates the given node with the location of the given token as its
 // ending rune.
 func (p *sourceParser) decorateEndRune(node ast.Node, token commentedLexeme) {
-	node.Base().End = int(token.position) + len(token.value) - 1 + int(p.startIndex)
+	node.NodeBase().End = int(token.position) + len(token.value) - 1 + int(p.startIndex)
 }
 
 // currentNode returns the node at the top of the stack.
@@ -216,7 +217,7 @@ func (p *sourceParser) isNextKeyword(keyword string) bool {
 // node.
 func (p *sourceParser) emitError(format string, args ...interface{}) {
 	errorNode := p.createErrorNode(format, args...)
-	b := p.currentNode().Base()
+	b := p.currentNode().NodeBase()
 	b.Errors = append(b.Errors, errorNode)
 }
 

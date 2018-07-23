@@ -3,11 +3,13 @@
 // license that can be found in the LICENSE file.
 package parser
 
-import "github.com/dennwc/webidl/ast"
+import (
+	"github.com/dennwc/webidl/ast"
+)
 
 // Parse parses the given WebIDL source into a parse tree.
-func Parse(source InputSource, input string) *ast.File {
-	lexer := lex(source, input)
+func Parse(input string) *ast.File {
+	lexer := lex(input)
 
 	config := parserConfig{
 		ignoredTokenTypes: map[tokenType]bool{
@@ -24,7 +26,7 @@ func Parse(source InputSource, input string) *ast.File {
 		eofTokenType:     tokenTypeEOF,
 	}
 
-	parser := buildParser(lexer, config, bytePosition(0), input)
+	parser := buildParser(lexer, config, bytePosition(0))
 	return parser.consumeTopLevel()
 }
 
@@ -42,7 +44,7 @@ func (p *sourceParser) consumeTopLevel() *ast.File {
 	}
 
 Loop:
-	for {
+	for !p.isToken(tokenTypeEOF) {
 		switch {
 
 		case p.isToken(tokenTypeLeftBracket) || p.isKeyword("interface") || p.isKeyword("dictionary"):
@@ -74,10 +76,6 @@ Loop:
 
 		default:
 			p.emitError("Unexpected token at root level: %v", p.currentToken.kind)
-			break Loop
-		}
-
-		if p.isToken(tokenTypeEOF) {
 			break Loop
 		}
 	}
@@ -291,7 +289,7 @@ func (p *sourceParser) tryConsumeIdentifiersList() ([]string, bool) {
 func (p *sourceParser) consumeCallbackType() *ast.Callback {
 	cb := &ast.Callback{}
 	defer p.node(cb)()
-	cb.Type = p.consumeType()
+	cb.Return = p.consumeType()
 	cb.Parameters = p.consumeParameters()
 	return cb
 }
@@ -304,22 +302,24 @@ var expandedTypeKeywords = map[string][]string{
 	"unrestricted": {"float", "double"},
 }
 
-// consumeType attempts to consume a type (identifier (with optional ?) or 'any').
-func (p *sourceParser) consumeType() *ast.Type {
-	n := &ast.Type{}
-	defer p.node(n)()
+func (p *sourceParser) consumeType() ast.Type {
+	base := &ast.Base{}
+	finish := p.node(base)
 	if p.tryConsumeKeyword("any") {
-		n.Any = true
-		return n
+		finish()
+		return &ast.AnyType{Base: *base}
 	} else if p.tryConsumeKeyword("sequence") {
+		seq := &ast.SequenceType{}
 		p.consume(tokenTypeLeftTri)
-		n.SequenceOf = p.consumeType()
+		seq.Elem = p.consumeType()
 		p.consume(tokenTypeRightTri)
-		return n
+		finish()
+		seq.Base = *base
+		return seq
 	}
 	if _, ok := p.tryConsume(tokenTypeLeftParen); ok {
 		// "("
-		var types []*ast.Type
+		var types []ast.Type
 		for {
 			types = append(types, p.consumeType())
 			if !p.tryConsumeKeyword("or") {
@@ -328,8 +328,8 @@ func (p *sourceParser) consumeType() *ast.Type {
 		}
 		// ")"
 		p.consume(tokenTypeRightParen)
-		n.UnionOf = types
-		return n
+		finish()
+		return &ast.UnionType{Base: *base, Types: types}
 	}
 
 	identifier := p.consumeIdentifier()
@@ -346,12 +346,14 @@ func (p *sourceParser) consumeType() *ast.Type {
 			}
 		}
 	}
-	n.Name = typeName
-
+	finish()
+	tp := &ast.TypeName{Base: *base, Name: typeName}
 	if _, ok := p.tryConsume(tokenTypeQuestionMark); ok {
-		n.Nullable = true
+		nl := &ast.NullableType{Base: tp.Base, Type: tp}
+		nl.End++
+		return nl
 	}
-	return n
+	return tp
 }
 
 // consumeParameter attempts to consume a parameter.

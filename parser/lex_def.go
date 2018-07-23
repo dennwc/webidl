@@ -11,8 +11,8 @@
 package parser
 
 // lex creates a new scanner for the input string.
-func lex(source InputSource, input string) *lexer {
-	return buildlex(source, input, performLexSource, isWhitespaceToken, tokenTypeError, tokenTypeNumber)
+func lex(input string) *lexer {
+	return buildlex(input, performLexSource, isWhitespaceToken, tokenTypeError, tokenTypeNumber)
 }
 
 // tokenType identifies the type of lexer lexemes.

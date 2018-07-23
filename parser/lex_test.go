@@ -65,7 +65,7 @@ func TestLexer(t *testing.T) {
 
 // collect gathers the emitted tokens into a slice.
 func collect(t *lexerTest) (tokens []lexeme) {
-	l := lex(InputSource(t.name), t.input)
+	l := lex(t.input)
 	for {
 		token := l.nextToken()
 		tokens = append(tokens, token)

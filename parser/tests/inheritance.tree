@@ -1,0 +1,26 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      49,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Declaration{
+            Base: ast.Base{
+                Start:    0,
+                End:      49,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Kind:        "interface",
+            Name:        "SomeInterface",
+            ParentType:  "AnotherInterface",
+            Mixin:       false,
+            Annotations: nil,
+            Members:     nil,
+            CustomOps:   nil,
+            Iterable:    (*ast.Iterable)(nil),
+        },
+    },
+}

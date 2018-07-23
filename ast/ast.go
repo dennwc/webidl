@@ -1,40 +1,40 @@
 package ast
 
 type Node interface {
-	Base() *BaseNode
+	NodeBase() *Base
 }
 
-type BaseNode struct {
+type Base struct {
 	Start    int          `json:"start"` // rune
 	End      int          `json:"end"`   // rune
 	Comments []string     `json:"comments,omitempty"`
 	Errors   []*ErrorNode `json:"errors,omitempty"`
 }
 
-func (b *BaseNode) Base() *BaseNode {
+func (b *Base) NodeBase() *Base {
 	return b
 }
 
 // error occurred; value is text of error
 type ErrorNode struct {
-	BaseNode
+	Base
 	Message string `json:"message"`
 }
 
-type GenDecl interface {
+type Decl interface {
 	Node
 	isGenDecl()
 }
 
 // The file root node
 type File struct {
-	BaseNode
-	Declarations []GenDecl `json:"declarations,omitempty"`
+	Base
+	Declarations []Decl `json:"declarations,omitempty"`
 }
 
 // interface Foo { ... }
 type Declaration struct {
-	BaseNode
+	Base
 	Kind        string        `json:"kind"`
 	Name        string        `json:"name"`
 	ParentType  string        `json:"parent_type,omitempty"`
@@ -48,7 +48,7 @@ type Declaration struct {
 func (Declaration) isGenDecl() {}
 
 type Dictionary struct {
-	BaseNode
+	Base
 	Name        string        `json:"name"`
 	Annotations []*Annotation `json:"annotations,omitempty"`
 	Members     []*Member     `json:"members,omitempty"`
@@ -58,7 +58,7 @@ func (Dictionary) isGenDecl() {}
 
 // [Constructor], []
 type Annotation struct {
-	BaseNode
+	Base
 	Name       string       `json:"name"`
 	Value      string       `json:"value,omitempty"`      // [A=B]
 	Parameters []*Parameter `json:"parameters,omitempty"` // [A(X x, Y y)]
@@ -67,8 +67,8 @@ type Annotation struct {
 
 // optional any SomeArg
 type Parameter struct {
-	BaseNode
-	Type     *Type  `json:"type"`
+	Base
+	Type     Type   `json:"type"`
 	Optional bool   `json:"optional,omitempty"`
 	Variadic bool   `json:"variadic,omitempty"`
 	Name     string `json:"name"`
@@ -77,7 +77,7 @@ type Parameter struct {
 
 // Window implements ECMA262Globals
 type Implementation struct {
-	BaseNode
+	Base
 	Name   string `json:"name"`
 	Source string `json:"source"`
 }
@@ -86,7 +86,7 @@ func (Implementation) isGenDecl() {}
 
 // Document includes DocumentOrShadowRoot
 type Includes struct {
-	BaseNode
+	Base
 	Name   string `json:"name"`
 	Source string `json:"source"`
 }
@@ -95,9 +95,9 @@ func (Includes) isGenDecl() {}
 
 // readonly attribute something
 type Member struct {
-	BaseNode
+	Base
 	Name           string        `json:"name,omitempty"`
-	Type           *Type         `json:"type,omitempty"`
+	Type           Type          `json:"type,omitempty"`
 	Init           string        `json:"init,omitempty"`
 	Attribute      bool          `json:"attribute,omitempty"`
 	Static         bool          `json:"static,omitempty"`
@@ -109,29 +109,59 @@ type Member struct {
 }
 
 type CustomOp struct {
-	BaseNode
+	Base
 	Name string `json:"name"`
 }
 
-type Type struct {
-	BaseNode
-	Name       string  `json:"name,omitempty"`
-	Any        bool    `json:"any,omitempty"`
-	Nullable   bool    `json:"nullable,omitempty"`
-	SequenceOf *Type   `json:"sequence_of,omitempty"`
-	UnionOf    []*Type `json:"union_of,omitempty"`
+type TypeName struct {
+	Base
+	Name string
 }
 
+func (*TypeName) isType() {}
+
 type Iterable struct {
-	BaseNode
-	Type *Type `json:"type"`
+	Base
+	Type Type `json:"type"`
 }
 
 type Callback struct {
-	BaseNode
+	Base
 	Name       string       `json:"name"`
-	Type       *Type        `json:"type,omitempty"`
+	Return     Type         `json:"type,omitempty"`
 	Parameters []*Parameter `json:"parameters,omitempty"`
 }
 
 func (Callback) isGenDecl() {}
+
+type Type interface {
+	Node
+	isType()
+}
+
+type AnyType struct {
+	Base
+}
+
+func (*AnyType) isType() {}
+
+type SequenceType struct {
+	Base
+	Elem Type
+}
+
+func (*SequenceType) isType() {}
+
+type UnionType struct {
+	Base
+	Types []Type
+}
+
+func (*UnionType) isType() {}
+
+type NullableType struct {
+	Base
+	Type Type
+}
+
+func (*NullableType) isType() {}

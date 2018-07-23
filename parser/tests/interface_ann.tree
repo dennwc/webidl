@@ -1,0 +1,51 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      27,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Declaration{
+            Base: ast.Base{
+                Start:    0,
+                End:      27,
+                Comments: nil,
+                Errors:   nil,
+            },
+            Kind:        "interface",
+            Name:        "Bar",
+            ParentType:  "",
+            Mixin:       false,
+            Annotations: {
+                &ast.Annotation{
+                    Base: ast.Base{
+                        Start:    1,
+                        End:      3,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Name:       "Foo",
+                    Value:      "",
+                    Parameters: nil,
+                    Values:     nil,
+                },
+                &ast.Annotation{
+                    Base: ast.Base{
+                        Start:    6,
+                        End:      8,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Name:       "Baz",
+                    Value:      "",
+                    Parameters: nil,
+                    Values:     nil,
+                },
+            },
+            Members:   nil,
+            CustomOps: nil,
+            Iterable:  (*ast.Iterable)(nil),
+        },
+    },
+}

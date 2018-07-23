@@ -1,0 +1,174 @@
+&ast.File{
+    Base: ast.Base{
+        Start:    0,
+        End:      91,
+        Comments: nil,
+        Errors:   nil,
+    },
+    Declarations: {
+        &ast.Declaration{
+            Base: ast.Base{
+                Start:    0,
+                End:      51,
+                Comments: nil,
+                Errors:   {
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    51,
+                            End:      49,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeRightBrace",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    51,
+                            End:      49,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected semicolon, got: tokenTypeRightBrace",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    54,
+                            End:      51,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeKeyword",
+                    },
+                },
+            },
+            Kind:        "interface",
+            Name:        "foo",
+            ParentType:  "",
+            Mixin:       false,
+            Annotations: nil,
+            Members:     {
+                &ast.Member{
+                    Base: ast.Base{
+                        Start:    17,
+                        End:      49,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Name: "baz",
+                    Type: &ast.TypeName{
+                        Base: ast.Base{
+                            Start:    24,
+                            End:      31,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Name: "someType",
+                    },
+                    Init:           "",
+                    Attribute:      false,
+                    Static:         true,
+                    Const:          false,
+                    Readonly:       false,
+                    Specialization: "",
+                    Parameters:     {
+                        &ast.Parameter{
+                            Base: ast.Base{
+                                Start:    37,
+                                End:      48,
+                                Comments: nil,
+                                Errors:   nil,
+                            },
+                            Type: &ast.TypeName{
+                                Base: ast.Base{
+                                    Start:    37,
+                                    End:      42,
+                                    Comments: nil,
+                                    Errors:   nil,
+                                },
+                                Name: "string",
+                            },
+                            Optional: false,
+                            Variadic: false,
+                            Name:     "param",
+                            Init:     "",
+                        },
+                    },
+                    Annotations: nil,
+                },
+            },
+            CustomOps: nil,
+            Iterable:  (*ast.Iterable)(nil),
+        },
+        &ast.Declaration{
+            Base: ast.Base{
+                Start:    54,
+                End:      91,
+                Comments: nil,
+                Errors:   {
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    91,
+                            End:      89,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeRightBrace",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    91,
+                            End:      89,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected semicolon, got: tokenTypeRightBrace",
+                    },
+                    &ast.ErrorNode{
+                        Base: ast.Base{
+                            Start:    94,
+                            End:      91,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Message: "Expected one of: [tokenTypeQuestionMark], found: tokenTypeEOF",
+                    },
+                },
+            },
+            Kind:        "interface",
+            Name:        "someType",
+            ParentType:  "",
+            Mixin:       false,
+            Annotations: nil,
+            Members:     {
+                &ast.Member{
+                    Base: ast.Base{
+                        Start:    76,
+                        End:      89,
+                        Comments: nil,
+                        Errors:   nil,
+                    },
+                    Name: "getBool",
+                    Type: &ast.TypeName{
+                        Base: ast.Base{
+                            Start:    76,
+                            End:      79,
+                            Comments: nil,
+                            Errors:   nil,
+                        },
+                        Name: "bool",
+                    },
+                    Init:           "",
+                    Attribute:      false,
+                    Static:         false,
+                    Const:          false,
+                    Readonly:       false,
+                    Specialization: "",
+                    Parameters:     nil,
+                    Annotations:    nil,
+                },
+            },
+            CustomOps: nil,
+            Iterable:  (*ast.Iterable)(nil),
+        },
+    },
+}
