@@ -29,6 +29,8 @@ func buildlex(input string, impl lexSourceImpl, whitespace isWhitespaceTokenChec
 		tokens:            make(chan lexeme),
 		isWhitespaceToken: whitespace,
 		lexSource:         impl,
+		line:              1,
+		startLine:         1,
 	}
 	go l.run()
 	return l
@@ -44,16 +46,18 @@ func (l *lexer) run() {
 
 // bytePosition represents the byte position in a piece of code.
 type bytePosition int
+type lineNumber int
 
 // lexeme represents a token returned from scanning the contents of a file.
 type lexeme struct {
 	kind     tokenType    // The type of this lexeme.
 	position bytePosition // The starting position of this token in the input string.
+	line     lineNumber   // Line number for starting position
 	value    string       // The textual value of this token.
 }
 
 func (l lexeme) String() string {
-	return fmt.Sprintf("inp:%d - %v(%s)", l.position, l.kind, l.value)
+	return fmt.Sprintf("inp:%d:%d - %v(%s)", l.line, l.position, l.kind, l.value)
 }
 
 // stateFn represents the state of the scanner as a function that returns the next state.
@@ -70,6 +74,9 @@ type lexer struct {
 	tokens                 chan lexeme  // channel of scanned lexemes
 	currentToken           lexeme       // The current token if any
 	lastNonWhitespaceToken lexeme       // The last token returned that is non-whitespace
+	line                   lineNumber   // current line number
+	startLine              lineNumber   // line number for next token
+	nextWasNL              bool         // last next() was a new line rune
 
 	isWhitespaceToken isWhitespaceTokenChecker
 	lexSource         lexSourceImpl
@@ -91,6 +98,11 @@ func (l *lexer) next() rune {
 	r, w := utf8.DecodeRuneInString(l.input[l.pos:])
 	l.width = bytePosition(w)
 	l.pos += l.width
+	l.nextWasNL = false
+	if r == '\n' {
+		l.line++
+		l.nextWasNL = true
+	}
 	return r
 }
 
@@ -123,6 +135,9 @@ func (l *lexer) peekValue(value string) bool {
 // backup steps back one rune. Can only be called once per call of next.
 func (l *lexer) backup() {
 	l.pos -= l.width
+	if l.nextWasNL {
+		l.line--
+	}
 }
 
 // value returns the current value of the token in the lexer.
@@ -136,7 +151,7 @@ func (l *lexer) emit(t tokenType) {
 }
 
 func (l *lexer) emitWith(t tokenType, val string) {
-	currentToken := lexeme{t, l.start, val}
+	currentToken := lexeme{t, l.start, l.startLine, val}
 
 	if l.isWhitespaceToken(t) {
 		l.lastNonWhitespaceToken = currentToken
@@ -145,18 +160,20 @@ func (l *lexer) emitWith(t tokenType, val string) {
 	l.tokens <- currentToken
 	l.currentToken = currentToken
 	l.start = l.pos
+	l.startLine = l.line
 }
 
 // errorf returns an error token and terminates the scan by passing
 // back a nil pointer that will be the next state, terminating l.nexttoken.
 func (l *lexer) errorf(format string, args ...interface{}) stateFn {
-	l.tokens <- lexeme{tokenTypeError, l.start, fmt.Sprintf(format, args...)}
+	l.tokens <- lexeme{tokenTypeError, l.start, l.startLine, fmt.Sprintf(format, args...)}
 	return nil
 }
 
 // ignore skips over the pending input before this point.
 func (l *lexer) ignore() {
 	l.start = l.pos
+	l.startLine = l.line
 }
 
 // accept consumes the next rune if it's from the valid set.

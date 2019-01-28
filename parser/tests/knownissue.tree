@@ -2,6 +2,7 @@
     Base: ast.Base{
         Start:    0,
         End:      411,
+        Line:     0,
         Comments: nil,
         Errors:   nil,
     },
@@ -10,6 +11,7 @@
             Base: ast.Base{
                 Start:    0,
                 End:      227,
+                Line:     1,
                 Comments: nil,
                 Errors:   nil,
             },
@@ -23,6 +25,7 @@
                     Base: ast.Base{
                         Start:    21,
                         End:      53,
+                        Line:     2,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -31,6 +34,7 @@
                         Base: ast.Base{
                             Start:    40,
                             End:      45,
+                            Line:     2,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -50,6 +54,7 @@
                     Base: ast.Base{
                         Start:    57,
                         End:      75,
+                        Line:     3,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -58,6 +63,7 @@
                         Base: ast.Base{
                             Start:    67,
                             End:      72,
+                            Line:     3,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -77,6 +83,7 @@
                     Base: ast.Base{
                         Start:    79,
                         End:      104,
+                        Line:     4,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -85,6 +92,7 @@
                         Base: ast.Base{
                             Start:    89,
                             End:      94,
+                            Line:     4,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -104,6 +112,7 @@
                     Base: ast.Base{
                         Start:    108,
                         End:      140,
+                        Line:     5,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -112,6 +121,7 @@
                         Base: ast.Base{
                             Start:    108,
                             End:      114,
+                            Line:     5,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -119,6 +129,7 @@
                             Base: ast.Base{
                                 Start:    108,
                                 End:      113,
+                                Line:     5,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -137,6 +148,7 @@
                             Base: ast.Base{
                                 Start:    129,
                                 End:      139,
+                                Line:     5,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -144,6 +156,7 @@
                                 Base: ast.Base{
                                     Start:    129,
                                     End:      134,
+                                    Line:     5,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
@@ -162,6 +175,7 @@
                     Base: ast.Base{
                         Start:    144,
                         End:      187,
+                        Line:     6,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -170,6 +184,7 @@
                         Base: ast.Base{
                             Start:    144,
                             End:      147,
+                            Line:     6,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -187,6 +202,7 @@
                             Base: ast.Base{
                                 Start:    162,
                                 End:      172,
+                                Line:     6,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -194,6 +210,7 @@
                                 Base: ast.Base{
                                     Start:    162,
                                     End:      167,
+                                    Line:     6,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
@@ -209,6 +226,7 @@
                             Base: ast.Base{
                                 Start:    175,
                                 End:      186,
+                                Line:     6,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -216,6 +234,7 @@
                                 Base: ast.Base{
                                     Start:    175,
                                     End:      180,
+                                    Line:     6,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
@@ -234,6 +253,7 @@
                     Base: ast.Base{
                         Start:    191,
                         End:      223,
+                        Line:     7,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -242,6 +262,7 @@
                         Base: ast.Base{
                             Start:    191,
                             End:      197,
+                            Line:     7,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -259,6 +280,7 @@
                             Base: ast.Base{
                                 Start:    212,
                                 End:      222,
+                                Line:     7,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -266,6 +288,7 @@
                                 Base: ast.Base{
                                     Start:    212,
                                     End:      217,
+                                    Line:     7,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
@@ -288,6 +311,7 @@
             Base: ast.Base{
                 Start:    230,
                 End:      331,
+                Line:     10,
                 Comments: nil,
                 Errors:   nil,
             },
@@ -301,6 +325,7 @@
                     Base: ast.Base{
                         Start:    253,
                         End:      291,
+                        Line:     11,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -309,6 +334,7 @@
                         Base: ast.Base{
                             Start:    253,
                             End:      259,
+                            Line:     11,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -326,6 +352,7 @@
                             Base: ast.Base{
                                 Start:    275,
                                 End:      290,
+                                Line:     11,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -333,6 +360,7 @@
                                 Base: ast.Base{
                                     Start:    275,
                                     End:      280,
+                                    Line:     11,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
@@ -351,6 +379,7 @@
                     Base: ast.Base{
                         Start:    296,
                         End:      327,
+                        Line:     12,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -359,6 +388,7 @@
                         Base: ast.Base{
                             Start:    296,
                             End:      299,
+                            Line:     12,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -376,6 +406,7 @@
                             Base: ast.Base{
                                 Start:    316,
                                 End:      326,
+                                Line:     12,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -383,6 +414,7 @@
                                 Base: ast.Base{
                                     Start:    316,
                                     End:      321,
+                                    Line:     12,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
@@ -405,6 +437,7 @@
             Base: ast.Base{
                 Start:    334,
                 End:      411,
+                Line:     15,
                 Comments: nil,
                 Errors:   nil,
             },
@@ -417,6 +450,7 @@
                     Base: ast.Base{
                         Start:    335,
                         End:      347,
+                        Line:     15,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -431,6 +465,7 @@
                     Base: ast.Base{
                         Start:    372,
                         End:      407,
+                        Line:     17,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -439,6 +474,7 @@
                         Base: ast.Base{
                             Start:    391,
                             End:      398,
+                            Line:     17,
                             Comments: nil,
                             Errors:   nil,
                         },

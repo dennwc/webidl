@@ -7,6 +7,7 @@ type Node interface {
 type Base struct {
 	Start    int // rune
 	End      int // rune
+	Line     int // line number
 	Comments []string
 	Errors   []*ErrorNode
 }

@@ -2,6 +2,7 @@
     Base: ast.Base{
         Start:    0,
         End:      18,
+        Line:     0,
         Comments: nil,
         Errors:   nil,
     },

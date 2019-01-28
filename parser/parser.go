@@ -103,7 +103,7 @@ type parserConfig struct {
 func buildParser(lexer *lexer, config parserConfig, startIndex bytePosition) *sourceParser {
 	l := peekableLex(lexer)
 	newLexeme := func() commentedLexeme {
-		return commentedLexeme{lexeme: lexeme{tokenTypeEOF, 0, ""}}
+		return commentedLexeme{lexeme: lexeme{tokenTypeEOF, 0, 0, ""}}
 	}
 	return &sourceParser{
 		startIndex:    startIndex,
@@ -144,6 +144,7 @@ func (p *sourceParser) node(node ast.Node) func() {
 func (p *sourceParser) decorateStartRuneAndComments(node ast.Node, token commentedLexeme) {
 	b := node.NodeBase()
 	b.Start = int(token.position) + int(p.startIndex)
+	b.Line = int(token.line)
 	p.decorateComments(node, token.comments)
 }
 
@@ -282,7 +283,7 @@ func (p *sourceParser) tryConsumeWithComments(types ...tokenType) (commentedLexe
 		return token, true
 	}
 
-	return commentedLexeme{lexeme{tokenTypeError, -1, ""}, make([]string, 0)}, false
+	return commentedLexeme{lexeme{tokenTypeError, -1, -1, ""}, make([]string, 0)}, false
 }
 
 // consumeUntil consumes all tokens until one of the given token types is found.

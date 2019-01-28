@@ -2,6 +2,7 @@
     Base: ast.Base{
         Start:    0,
         End:      69,
+        Line:     0,
         Comments: nil,
         Errors:   nil,
     },
@@ -10,6 +11,7 @@
             Base: ast.Base{
                 Start:    0,
                 End:      69,
+                Line:     1,
                 Comments: nil,
                 Errors:   nil,
             },
@@ -23,6 +25,7 @@
                     Base: ast.Base{
                         Start:    37,
                         End:      65,
+                        Line:     2,
                         Comments: nil,
                         Errors:   nil,
                     },
@@ -31,6 +34,7 @@
                         Base: ast.Base{
                             Start:    37,
                             End:      40,
+                            Line:     2,
                             Comments: nil,
                             Errors:   nil,
                         },
@@ -48,6 +52,7 @@
                             Base: ast.Base{
                                 Start:    54,
                                 End:      64,
+                                Line:     2,
                                 Comments: nil,
                                 Errors:   nil,
                             },
@@ -55,6 +60,7 @@
                                 Base: ast.Base{
                                     Start:    54,
                                     End:      58,
+                                    Line:     2,
                                     Comments: nil,
                                     Errors:   nil,
                                 },
