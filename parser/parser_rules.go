@@ -357,7 +357,7 @@ func (p *sourceParser) consumeMember(dict bool) *ast.Member {
 	n.Attribute = dict
 
 	// getter/setter
-	if p.isIdentifier("getter") || p.isIdentifier("setter") {
+	if p.isIdentifier("getter") || p.isIdentifier("setter") || p.isIdentifier("deleter") {
 		n.Specialization = p.consumeIdentifier()
 	} else if p.tryConsumeKeyword("stringifier") {
 		n.Specialization = "stringifier"
