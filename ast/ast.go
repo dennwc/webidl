@@ -57,6 +57,7 @@ type Mixin struct {
 	Base
 	Name        string
 	Inherits    string
+	Partial     bool
 	Annotations []*Annotation
 	Members     []MixinMember
 	CustomOps   []*CustomOp

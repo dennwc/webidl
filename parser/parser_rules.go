@@ -71,7 +71,7 @@ func (p *sourceParser) consumeInterfaceOrMixin(ann []*ast.Annotation, base *ast.
 	partial := p.tryConsumeKeyword("partial")
 	p.consumeKeyword("interface")
 	if p.tryConsumeKeyword("mixin") {
-		return p.consumeMixin(ann, base, finish)
+		return p.consumeMixin(partial, ann, base, finish)
 	}
 	return p.consumeInterface(partial, false, ann, base, finish)
 }
@@ -150,8 +150,8 @@ loop:
 	return n
 }
 
-func (p *sourceParser) consumeMixin(ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Mixin {
-	n := &ast.Mixin{Annotations: ann}
+func (p *sourceParser) consumeMixin(partial bool, ann []*ast.Annotation, base *ast.Base, finish func()) *ast.Mixin {
+	n := &ast.Mixin{Annotations: ann, Partial: partial}
 	defer func() {
 		finish()
 		n.Base = *base
