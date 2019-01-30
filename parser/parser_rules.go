@@ -383,9 +383,9 @@ func (p *sourceParser) consumeMember(dict bool) *ast.Member {
 		n.Attribute = true
 	}
 
-	if len(n.Annotations) == 0 {
-		n.Annotations = p.tryConsumeAnnotations()
-	}
+	// second annotation place, and in in HTML specification,
+	// annotation is gived on both places on some members
+	n.Annotations = append(n.Annotations, p.tryConsumeAnnotations()...)
 
 	// Consume the type of the member.
 	n.Type = p.consumeType()
@@ -573,6 +573,9 @@ func (p *sourceParser) consumeParameter() *ast.Parameter {
 	if p.tryConsumeKeyword("optional") {
 		n.Optional = true
 	}
+
+	// sometimes there is more annotations after the optional
+	n.Annotations = append(n.Annotations, p.tryConsumeAnnotations()...)
 
 	// Consume the parameter's type.
 	n.Type = p.consumeType()
