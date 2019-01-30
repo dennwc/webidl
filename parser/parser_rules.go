@@ -443,6 +443,10 @@ func (p *sourceParser) consumeAnnotationPart() *ast.Annotation {
 			n.Values = list
 		} else {
 			n.Value = p.consumeIdentifier()
+			if p.isToken(tokenTypeLeftParen) {
+				// Consume (optional) parameters, e.g. NamedConstructor=Foo(...).
+				n.Parameters = p.consumeParameters()
+			}
 		}
 	} else if p.isToken(tokenTypeLeftParen) {
 		// Consume (optional) parameters.
