@@ -2227,6 +2227,7 @@
             },
             Name:        "NonElementParentNode",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     {
                 &ast.Member{
@@ -2316,6 +2317,7 @@
             },
             Name:        "DocumentOrShadowRoot",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     nil,
             CustomOps:   nil,
@@ -2341,6 +2343,7 @@
             },
             Name:        "ParentNode",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     {
                 &ast.Member{
@@ -2855,6 +2858,7 @@
             },
             Name:        "NonDocumentTypeChildNode",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     {
                 &ast.Member{
@@ -2957,6 +2961,7 @@
             },
             Name:        "ChildNode",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     {
                 &ast.Member{
@@ -3350,6 +3355,7 @@
             },
             Name:        "Slotable",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     {
                 &ast.Member{

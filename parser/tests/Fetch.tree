@@ -603,6 +603,7 @@
             },
             Name:        "Body",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     {
                 &ast.Member{
@@ -3162,6 +3163,7 @@
             },
             Name:        "WindowOrWorkerGlobalScope",
             Inherits:    "",
+            Partial:     true,
             Annotations: nil,
             Members:     {
                 &ast.Member{

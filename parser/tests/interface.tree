@@ -34,6 +34,7 @@
             },
             Name:        "MyMixin",
             Inherits:    "",
+            Partial:     false,
             Annotations: nil,
             Members:     nil,
             CustomOps:   nil,
